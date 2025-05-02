@@ -185,6 +185,7 @@ class ValueControl {
     }
 }
 
+// Oscillator Control
 class OscillatorControl {
     constructor(containerId, header, options = {}) {
         this.container = document.getElementById(containerId);
@@ -270,5 +271,136 @@ class OscillatorControl {
 
     midiNoteToFrequency(note) {
         return 440 * Math.pow(2, (note - 69) / 12);
+    }
+}
+
+// Oscillator Diagram
+class OscillatorDiagram {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        if (!this.container) {
+            throw new Error(`Container element with id '${containerId}' not found`);
+        }
+
+        this.connections = new Map();
+        this.activeConnections = new Set();
+        this.init();
+        
+        // Add resize listener to update connections when window size changes
+        window.addEventListener('resize', () => this.updateConnections());
+    }
+
+    init() {
+        this.createElements();
+        this.createConnections();
+    }
+
+    createElements() {
+        this.element = document.createElement('div');
+        this.element.className = 'oscillator-diagram';
+        
+        const grid = document.createElement('div');
+        grid.className = 'oscillator-grid';
+        
+        // Create 4 oscillator nodes
+        for (let i = 1; i <= 4; i++) {
+            const node = document.createElement('div');
+            node.className = 'oscillator-node';
+            node.dataset.id = `osc-${i}`;
+            node.innerHTML = `<div class="title">Oscillator ${i}</div>`;
+            grid.appendChild(node);
+        }
+        
+        this.element.appendChild(grid);
+        this.container.appendChild(this.element);
+    }
+
+    createConnections() {
+        const nodes = this.element.querySelectorAll('.oscillator-node');
+        const grid = this.element.querySelector('.oscillator-grid');
+        
+        // Create connections between nodes
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const line = document.createElement('div');
+                line.className = 'connection-line';
+                line.dataset.from = nodes[i].dataset.id;
+                line.dataset.to = nodes[j].dataset.id;
+                grid.appendChild(line);
+                
+                this.connections.set(`${nodes[i].dataset.id}-${nodes[j].dataset.id}`, {
+                    line,
+                    from: nodes[i],
+                    to: nodes[j]
+                });
+            }
+        }
+        
+        this.updateConnections();
+    }
+
+    updateConnections() {
+        const grid = this.element.querySelector('.oscillator-grid');
+        const gridRect = grid.getBoundingClientRect();
+        
+        this.connections.forEach((connection, key) => {
+            const fromRect = connection.from.getBoundingClientRect();
+            const toRect = connection.to.getBoundingClientRect();
+            
+            // Calculate connection line position and angle
+            const fromX = fromRect.left + fromRect.width / 2 - gridRect.left;
+            const fromY = fromRect.top + fromRect.height / 2 - gridRect.top;
+            const toX = toRect.left + toRect.width / 2 - gridRect.left;
+            const toY = toRect.top + toRect.height / 2 - gridRect.top;
+            
+            const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+            const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+            
+            // Update line position and rotation
+            connection.line.style.width = `${length}px`;
+            connection.line.style.left = `${fromX}px`;
+            connection.line.style.top = `${fromY}px`;
+            connection.line.style.transform = `rotate(${angle}deg)`;
+            
+            // Update line visibility based on active state
+            const isActive = this.activeConnections.has(key);
+            connection.line.style.opacity = isActive ? '1' : '0.3';
+        });
+    }
+
+    setConnection(fromId, toId, active = true) {
+        const key = [fromId, toId].sort().join('-');
+        const connection = this.connections.get(key);
+        
+        if (connection) {
+            if (active) {
+                connection.line.classList.add('active');
+                connection.from.classList.add('active');
+                connection.to.classList.add('active');
+                this.activeConnections.add(key);
+            } else {
+                connection.line.classList.remove('active');
+                connection.from.classList.remove('active');
+                connection.to.classList.remove('active');
+                this.activeConnections.delete(key);
+            }
+            // Update visual state after changing connection
+            this.updateConnections();
+        }
+    }
+
+    getActiveConnections() {
+        return Array.from(this.activeConnections);
+    }
+
+    clearConnections() {
+        this.connections.forEach(connection => {
+            connection.line.classList.remove('active');
+            connection.from.classList.remove('active');
+            connection.to.classList.remove('active');
+        });
+        this.activeConnections.clear();
+        // Update visual state after clearing connections
+        this.updateConnections();
     }
 }
