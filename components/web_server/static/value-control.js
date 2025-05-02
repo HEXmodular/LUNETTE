@@ -1,3 +1,5 @@
+// all controls lives here
+
 class ValueControl {
     constructor(options = {}) {
         this.options = {
@@ -5,6 +7,7 @@ class ValueControl {
             max: 100,
             initialValue: 50,
             onChange: null,
+            formatValue: (value) => value.toString(),
             ...options
         };
 
@@ -13,62 +16,48 @@ class ValueControl {
         this.lastY = 0;
         this.isDragging = false;
         this.updateInterval = null;
+        this.boundEventHandlers = {};
 
         this.init();
     }
 
     init() {
-        // Create component structure
-        this.element = document.createElement('div');
-        this.element.className = 'value-control';
-        
-        this.display = document.createElement('div');
-        this.display.className = 'value-display';
-        this.display.textContent = this.currentValue;
-        
-        this.slider = document.createElement('div');
-        this.slider.className = 'value-slider';
-        
-        this.element.appendChild(this.display);
-        this.element.appendChild(this.slider);
-        
-        // Add event listeners
-        this.element.addEventListener('touchstart', this.handleTouchStart.bind(this));
-        this.element.addEventListener('touchmove', this.handleTouchMove.bind(this));
-        this.element.addEventListener('touchend', this.handleTouchEnd.bind(this));
-        this.element.addEventListener('touchcancel', this.handleTouchEnd.bind(this));
-        
-        // Add mouse support for desktop testing
-        this.element.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        this.createElements();
+        this.addEventListeners();
     }
 
-    updateValue(newValue) {
-        this.currentValue = Math.max(this.options.min, Math.min(this.options.max, newValue));
-        this.display.textContent = Math.round(this.currentValue);
+    createElements() {
+        this.element = document.createElement('div');
+        this.element.className = 'value-control';
+        this.element.innerHTML = `
+            <label for="${this.options.id}">${this.options.label}</label>
+            <div class="control-container">
+                <div class="value-display">${this.options.formatValue(this.currentValue)}</div>
+                <div class="value-slider"></div>
+            </div>
+        `;
         
-        if (this.options.onChange) {
-            this.options.onChange(this.currentValue);
-        }
+        this.display = this.element.querySelector('.value-display');
+        this.slider = this.element.querySelector('.value-slider');
+    }
+
+    handleDragStart(y, control) {
+        this.startY = y;
+        this.lastY = y;
+        this.isDragging = true;
+        if (control) control.classList.add('active');
+        this.startContinuousUpdate(this.startY, this.lastY);
+    }
+
+    handleDragEnd(control) {
+        this.isDragging = false;
+        if (control) control.classList.remove('active');
+        this.stopContinuousUpdate();
     }
 
     handleTouchStart(e) {
         e.preventDefault();
-        this.startY = e.touches[0].clientY;
-        this.lastY = this.startY;
-        this.isDragging = true;
-        this.slider.classList.add('active');
-        
-        // Start continuous update
-        this.updateInterval = setInterval(() => {
-            if (this.isDragging) {
-                const deltaY = this.lastY - this.startY;
-                const speed = Math.abs(deltaY) / 100; // Speed factor based on distance
-                const change = deltaY > 0 ? -speed : speed;
-                this.updateValue(this.currentValue + change);
-            }
-        }, 16); // ~60fps
+        this.handleDragStart(e.touches[0].clientY, this.slider);
     }
 
     handleTouchMove(e) {
@@ -78,34 +67,14 @@ class ValueControl {
     }
 
     handleTouchEnd(e) {
+        if (!this.isDragging) return;
         e.preventDefault();
-        this.isDragging = false;
-        this.slider.classList.remove('active');
-        
-        // Stop continuous update
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-            this.updateInterval = null;
-        }
+        this.handleDragEnd(this.slider);
     }
-    
-    // Mouse support for desktop testing
+
     handleMouseDown(e) {
         e.preventDefault();
-        this.startY = e.clientY;
-        this.lastY = this.startY;
-        this.isDragging = true;
-        this.slider.classList.add('active');
-        
-        // Start continuous update
-        this.updateInterval = setInterval(() => {
-            if (this.isDragging) {
-                const deltaY = this.lastY - this.startY;
-                const speed = Math.abs(deltaY) / 100; // Speed factor based on distance
-                const change = deltaY > 0 ? -speed : speed;
-                this.updateValue(this.currentValue + change);
-            }
-        }, 16); // ~60fps
+        this.handleDragStart(e.clientY, this.slider);
     }
 
     handleMouseMove(e) {
@@ -117,17 +86,76 @@ class ValueControl {
     handleMouseUp(e) {
         if (!this.isDragging) return;
         e.preventDefault();
-        this.isDragging = false;
-        this.slider.classList.remove('active');
+        this.handleDragEnd(this.slider);
+    }
+
+    addEventListeners() {
+        // Bind event handlers to preserve 'this' context
+        this.boundEventHandlers = {
+            touchstart: (e) => this.handleTouchStart(e),
+            touchmove: (e) => this.handleTouchMove(e),
+            touchend: (e) => this.handleTouchEnd(e),
+            touchcancel: (e) => this.handleTouchEnd(e),
+            mousedown: (e) => this.handleMouseDown(e),
+            mousemove: (e) => this.handleMouseMove(e),
+            mouseup: (e) => this.handleMouseUp(e)
+        };
+
+        // Touch events
+        this.element.addEventListener('touchstart', this.boundEventHandlers.touchstart);
+        this.element.addEventListener('touchmove', this.boundEventHandlers.touchmove);
+        this.element.addEventListener('touchend', this.boundEventHandlers.touchend);
+        this.element.addEventListener('touchcancel', this.boundEventHandlers.touchcancel);
         
-        // Stop continuous update
+        // Mouse events
+        this.element.addEventListener('mousedown', this.boundEventHandlers.mousedown);
+        document.addEventListener('mousemove', this.boundEventHandlers.mousemove);
+        document.addEventListener('mouseup', this.boundEventHandlers.mouseup);
+    }
+
+    removeEventListeners() {
+        // Remove touch events
+        this.element.removeEventListener('touchstart', this.boundEventHandlers.touchstart);
+        this.element.removeEventListener('touchmove', this.boundEventHandlers.touchmove);
+        this.element.removeEventListener('touchend', this.boundEventHandlers.touchend);
+        this.element.removeEventListener('touchcancel', this.boundEventHandlers.touchcancel);
+        
+        // Remove mouse events
+        this.element.removeEventListener('mousedown', this.boundEventHandlers.mousedown);
+        document.removeEventListener('mousemove', this.boundEventHandlers.mousemove);
+        document.removeEventListener('mouseup', this.boundEventHandlers.mouseup);
+    }
+
+    updateValue(newValue) {
+        this.currentValue = Math.max(this.options.min, Math.min(this.options.max, newValue));
+        this.display.textContent = this.options.formatValue(Math.round(this.currentValue));
+        
+        if (this.options.onChange) {
+            this.options.onChange(this.currentValue);
+        }
+    }
+
+    startContinuousUpdate(startY, lastY) {
+        if (this.updateInterval) clearInterval(this.updateInterval);
+        
+        this.updateInterval = setInterval(() => {
+            if (this.isDragging) {
+                const deltaY = this.lastY - this.startY;
+                const speed = Math.abs(deltaY) / 100;
+                const change = deltaY > 0 ? -speed : speed;
+                this.updateValue(this.currentValue + change);
+            }
+        }, 16);
+    }
+
+    stopContinuousUpdate() {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
             this.updateInterval = null;
         }
     }
 
-    // Public methods
+    // Public API
     getValue() {
         return this.currentValue;
     }
@@ -136,21 +164,111 @@ class ValueControl {
         this.updateValue(value);
     }
 
-    // Mount component to container
     mount(selector) {
         const container = typeof selector === 'string' 
             ? document.querySelector(selector) 
             : selector;
             
-        if (container) {
-            container.appendChild(this.element);
+        if (!container) {
+            throw new Error(`Container element not found for selector: ${selector}`);
         }
+        
+        container.appendChild(this.element);
     }
 
-    // Unmount component
     unmount() {
+        this.stopContinuousUpdate();
+        this.removeEventListeners();
         if (this.element.parentNode) {
             this.element.parentNode.removeChild(this.element);
         }
     }
-} 
+}
+
+class OscillatorControl {
+    constructor(containerId, header, options = {}) {
+        this.container = document.getElementById(containerId);
+        this.container.innerHTML = `<div class="title">${header}</div>`;
+        
+        if (!this.container) {
+            throw new Error(`Container element with id '${containerId}' not found`);
+        }
+        
+        this.options = {
+            onChange: null,
+            ...options
+        };
+
+        this.noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        this.isUpdating = false;
+        
+        this.frequencyControl = new ValueControl({
+            id: 'frequency',
+            label: 'Frequency (Hz)',
+            min: 20,
+            max: 2000,
+            initialValue: 440,
+            onChange: (value) => this.onFrequencyChange(value),
+            formatValue: (value) => `${Math.round(value)} Hz`
+        });
+
+        this.noteControl = new ValueControl({
+            id: 'note',
+            label: 'Note',
+            min: 0,
+            max: 127,
+            initialValue: 69,
+            onChange: (value) => this.onNoteChange(value),
+            formatValue: (value) => this.getNoteDisplay(value)
+        });
+
+        this.init();
+    }
+
+    init() {
+        this.frequencyControl.mount(this.container);
+        this.noteControl.mount(this.container);
+    }
+
+    onFrequencyChange(frequency) {
+        if (this.isUpdating) return;
+        this.isUpdating = true;
+        
+        const midiNote = this.frequencyToMidiNote(frequency);
+        this.noteControl.setValue(midiNote);
+        
+        if (this.options.onChange) {
+            this.options.onChange(Math.round(frequency));
+        }
+        
+        this.isUpdating = false;
+    }
+
+    onNoteChange(note) {
+        if (this.isUpdating) return;
+        this.isUpdating = true;
+        
+        const frequency = this.midiNoteToFrequency(note);
+        this.frequencyControl.setValue(frequency);
+        
+        if (this.options.onChange) {
+            this.options.onChange(Math.round(frequency));
+        }
+        
+        this.isUpdating = false;
+    }
+
+    getNoteDisplay(midiNote) {
+        const octave = Math.floor(midiNote / 12) - 1;
+        const noteName = this.noteNames[midiNote % 12];
+        return `${noteName}${octave}`;
+    }
+
+    frequencyToMidiNote(frequency) {
+        return Math.round(12 * Math.log2(frequency/440) + 69);
+    }
+
+    midiNoteToFrequency(note) {
+        return 440 * Math.pow(2, (note - 69) / 12);
+    }
+}

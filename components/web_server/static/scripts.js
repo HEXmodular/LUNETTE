@@ -10,8 +10,16 @@ function updateOscillator(value) {
             },
             body: JSON.stringify({
                 frequency: value,
-                amplitude: 127.0 // Using default amplitude from note_generator.c
             })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .catch(error => {
+            console.error('Error updating oscillator:', error);
         })
         .finally(() => {
             updateOscillator.isSending = false;

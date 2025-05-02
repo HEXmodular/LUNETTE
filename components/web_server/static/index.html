@@ -9,23 +9,35 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="page-title">OSC1 FREQ</h1>
-        <div id="valueControl"></div>
+        <div id="oscillatorControl1" class="oscillator-control"></div>
+        <div id="oscillatorContro12" class="oscillator-control"></div>
     </div>
     <script src="scripts.js"></script>
     <script src="value-control.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const valueControl = new ValueControl({
-                min: 1,
-                max: 440,
-                initialValue: 220,
-                onChange: (value) => {
-                    updateOscillator(value);
-                }
-            });
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     const valueControl = new IntegerValueControl({
+        //         min: 1,
+        //         max: 440,
+        //         initialValue: 220,
+        //         onChange: (value) => {
+        //             updateOscillator(value);
+        //         }
+        //     });
             
-            valueControl.mount('#valueControl');
+        //     valueControl.mount('#valueControl');
+        // });
+
+        const oscillatorControl1 = new OscillatorControl('oscillatorControl1', 'OSC1', {
+            onChange: (frequency) => {
+                updateOscillator(frequency);
+            }
+        });
+
+        const oscillatorControl2 = new OscillatorControl('oscillatorContro12', 'OSC2', {
+            onChange: (frequency) => {
+                updateOscillator(frequency);
+            }
         });
     </script>
 </body>
