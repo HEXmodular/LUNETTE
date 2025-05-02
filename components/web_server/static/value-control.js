@@ -284,6 +284,7 @@ class OscillatorDiagram {
 
         this.connections = new Map();
         this.activeConnections = new Set();
+        this.connectionLabels = new Map();
         this.init();
         
         // Add resize listener to update connections when window size changes
@@ -327,9 +328,16 @@ class OscillatorDiagram {
                 line.dataset.from = nodes[i].dataset.id;
                 line.dataset.to = nodes[j].dataset.id;
                 grid.appendChild(line);
+
+                // Create label for connection
+                const label = document.createElement('div');
+                label.className = 'connection-label';
+                label.textContent = ''; // Empty by default
+                grid.appendChild(label);
                 
                 this.connections.set(`${nodes[i].dataset.id}-${nodes[j].dataset.id}`, {
                     line,
+                    label,
                     from: nodes[i],
                     to: nodes[j]
                 });
@@ -362,28 +370,54 @@ class OscillatorDiagram {
             connection.line.style.top = `${fromY}px`;
             connection.line.style.transform = `rotate(${angle}deg)`;
             
-            // Update line visibility based on active state
+            // Update label position
+            const labelX = fromX + (toX - fromX) / 2;
+            const labelY = fromY + (toY - fromY) / 2;
+            
+            // Adjust label position to be perpendicular to the line
+            const labelAngle = angle + 90;
+            connection.label.style.left = `${labelX}px`;
+            connection.label.style.top = `${labelY}px`;
+            connection.label.style.transform = `translate(-50%, -50%) rotate(${labelAngle}deg)`;
+            
+            // Update visibility based on active state
             const isActive = this.activeConnections.has(key);
             connection.line.style.opacity = isActive ? '1' : '0.3';
+            connection.label.style.opacity = isActive ? '1' : '0.3';
         });
     }
 
-    setConnection(fromId, toId, active = true) {
+    setConnection(fromId, toId, active = true, labelText = '') {
         const key = [fromId, toId].sort().join('-');
         const connection = this.connections.get(key);
         
         if (connection) {
             if (active) {
                 connection.line.classList.add('active');
+                connection.label.classList.add('active');
                 connection.from.classList.add('active');
                 connection.to.classList.add('active');
                 this.activeConnections.add(key);
+                
+                // Set label text if provided
+                if (labelText) {
+                    connection.label.textContent = labelText;
+                    connection.label.style.display = 'block';
+                } else {
+                    connection.label.style.display = 'none';
+                }
             } else {
                 connection.line.classList.remove('active');
+                connection.label.classList.remove('active');
                 connection.from.classList.remove('active');
                 connection.to.classList.remove('active');
                 this.activeConnections.delete(key);
+                connection.label.style.display = 'none';
             }
+            
+            // Force a reflow to ensure styles are applied
+            this.element.offsetHeight;
+            
             // Update visual state after changing connection
             this.updateConnections();
         }
@@ -396,6 +430,7 @@ class OscillatorDiagram {
     clearConnections() {
         this.connections.forEach(connection => {
             connection.line.classList.remove('active');
+            connection.label.classList.remove('active');
             connection.from.classList.remove('active');
             connection.to.classList.remove('active');
         });

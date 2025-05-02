@@ -62,18 +62,21 @@
         // Очистить все соединения
         diagram.clearConnections();
 
-        // Активировать соединение между осцилляторами 1 и 2
-        diagram.setConnection('osc-1', 'osc-2', true);
+        // Активировать соединение с подписью
+        diagram.setConnection('osc-1', 'osc-2', true, 'OR');
 
-        diagram.setConnection('osc-2', 'osc-3', true);
+        // Активировать соединение без подписи
+        diagram.setConnection('osc-2', 'osc-3', true, 'AND');
 
-        diagram.setConnection('osc-3', 'osc-4', true);
+        // Деактивировать соединение (подпись скроется)
+        diagram.setConnection('osc-3', 'osc-4', true, 'XOR');
 
         // Получить список активных соединений
         const activeConnections = diagram.getActiveConnections();
 
         // todo добавить возможность активировать/деактивировать один из осцилляторов
         // todo добавить возможность убрать заголовки у компонентов
+        // todo добавить возможность кликомом выбрать тип соединения
     </script>
 </body>
 </html> 
