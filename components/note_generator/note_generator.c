@@ -9,15 +9,15 @@
 #include "driver/gptimer.h"
 
 #define MHZ                             (1000000)
-#define CONST_PI                        (3.1416f)           // Constant of PI, used for calculating the sine wave
+#define CONST_PI                        (3.1416)           // Constant of PI, used for calculating the sine wave
 #define EXAMPLE_SIGMA_DELTA_GPIO_NUM    (4)                 // Select GPIO_NUM_4 as the sigma-delta output pin
 #define EXAMPLE_OVER_SAMPLE_RATE        (10 * MHZ)          // 10 MHz over sample rate
 #define EXAMPLE_TIMER_RESOLUTION        (1  * MHZ)          // 1 MHz timer counting resolution
 #define EXAMPLE_CALLBACK_INTERVAL_US    (100)               // 100 us interval of each timer callback = 100 kHz TODO 2000
 #define EXAMPLE_ALARM_COUNT             (EXAMPLE_CALLBACK_INTERVAL_US * (EXAMPLE_TIMER_RESOLUTION / MHZ))
 #define EXAMPLE_SINE_WAVE_FREQ_HZ       (100)               // 100 Hz sine wave, adjust this value to decide the sine wave frequency
-#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0f)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
-#define EXAMPLE_SINE_WAVE_POINT_NUM     (MHZ / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ))
+#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
+#define EXAMPLE_SINE_WAVE_POINT_NUM     (MHZ / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ)) // 1000000 / (100 * 100)  = 100
 
 ESP_STATIC_ASSERT(EXAMPLE_SINE_WAVE_POINT_NUM > 1, "Sine wave frequency is too high");
 ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");
@@ -25,28 +25,47 @@ ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is
 
 static const char *TAG = "sdm_dac";
 static int8_t sine_wave[EXAMPLE_SINE_WAVE_POINT_NUM];   // Sine wave data buffer
-static double current_frequency = 100.0f; // Current frequency in Hz
-static double delta = 1.0f;
+static double current_frequency = 100.0; // Current frequency in Hz
+static double delta = 1.0;
+
+// struct sdm_group_t {
+//     int group_id;               // Group ID, index from 0
+//     portMUX_TYPE spinlock;      // to protect per-group register level concurrent access
+//     sdm_hal_context_t hal; // hal context
+//     sdm_channel_t *channels[SOC_SDM_CHANNELS_PER_GROUP]; // array of sdm channels
+//     sdm_clock_source_t clk_src; // Clock source
+// };
+
+// __attribute__((always_inline))
+// static inline void sdm_ll_set_pulse_density(sdm_channel_handle_t chan, uint32_t density)
+// {
+//     ESP_RETURN_ON_FALSE_ISR(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+//     sdm_group_t *group = chan->group;
+//     int chan_id = chan->chan_id;
+
+//     portENTER_CRITICAL_SAFE(&chan->spinlock);
+//     gpio_sd_dev_t *hw = group->hal.dev;
+//     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan_id], duty, density);
+//     portEXIT_CRITICAL_SAFE(&chan->spinlock);
+
+    
+// }
 
 static bool IRAM_ATTR example_timer_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    //int cnt = 0;
-    static double phaser = 0.0f;
+
+    static double phaser = 0.0;
     sdm_channel_handle_t sdm_chan = (sdm_channel_handle_t)user_ctx;
 
-    //cnt = (uint32_t)roundf(phase);
-    //cnt = (int)phase;
 
     /* Set the pulse density */
     sdm_channel_set_pulse_density(sdm_chan, sine_wave[(int)phaser]);
     phaser += delta;
-    //cnt++;
-    //phaser = phaser + 2.1f;
 
     /* Loop the sine wave data buffer */
     if (phaser >= EXAMPLE_SINE_WAVE_POINT_NUM) {
         //cnt = 0;
-        phaser = 0.0f;
+        phaser = 0.0;
         // phaser += 0.1f;
     }
     return false;
@@ -111,7 +130,7 @@ void oscillator_init(void)
 {
     /* Initialize sine wave data */
     for (int i = 0; i < EXAMPLE_SINE_WAVE_POINT_NUM; i++) {
-        sine_wave[i] = (int8_t)((sin(2 * (double)i * CONST_PI / EXAMPLE_SINE_WAVE_POINT_NUM)) * EXAMPLE_SINE_WAVE_AMPLITUDE);
+        sine_wave[i] = (int8_t)((sin(2.0 * (double)i * CONST_PI / EXAMPLE_SINE_WAVE_POINT_NUM)) * EXAMPLE_SINE_WAVE_AMPLITUDE);
     }
     /* Initialize sigma-delta modulation on the specific GPIO */
     sdm_channel_handle_t sdm_chan = example_init_sdm();
@@ -131,7 +150,8 @@ void oscillator_set_frequency(double frequency_hz) {
     current_frequency = frequency_hz;
     
     // Calculate delta for smooth frequency transition
-    delta = 1+(EXAMPLE_SINE_WAVE_FREQ_HZ - current_frequency) * 0.01;
+    delta = 1 + ((current_frequency - EXAMPLE_SINE_WAVE_FREQ_HZ) * 0.01);
+    //  1+ (200 - 100) * 0.01 = 1
 
-    ESP_LOGI(TAG, "Frequency set to %.2f Hz", frequency_hz);
+    ESP_LOGI(TAG, "Frequency set to %d Hz", (int)current_frequency);
 }
