@@ -16,40 +16,18 @@
 #define EXAMPLE_CALLBACK_INTERVAL_US    (100)               // 100 us interval of each timer callback = 100 kHz TODO 2000
 #define EXAMPLE_ALARM_COUNT             (EXAMPLE_CALLBACK_INTERVAL_US * (EXAMPLE_TIMER_RESOLUTION / MHZ))
 #define EXAMPLE_SINE_WAVE_FREQ_HZ       (100)               // 100 Hz sine wave, adjust this value to decide the sine wave frequency
-#define EXAMPLE_SINE_WAVE_AMPLITUDE     (127.0)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
+#define EXAMPLE_SINE_WAVE_AMPLITUDE     (90.0)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
 #define EXAMPLE_SINE_WAVE_POINT_NUM     (MHZ / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ)) // 1000000 / (100 * 100)  = 100
+#define EXAMPLE_SINE_WAVE_POINT_NUM_DITHER (EXAMPLE_SINE_WAVE_POINT_NUM * 2)
 
 ESP_STATIC_ASSERT(EXAMPLE_SINE_WAVE_POINT_NUM > 1, "Sine wave frequency is too high");
 ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");
 
-
 static const char *TAG = "sdm_dac";
-static int8_t sine_wave[EXAMPLE_SINE_WAVE_POINT_NUM];   // Sine wave data buffer
+static int8_t sine_wave[EXAMPLE_SINE_WAVE_POINT_NUM_DITHER];   // Sine wave data buffer
 static double current_frequency = 100.0; // Current frequency in Hz
 static double delta = 1.0;
 
-// struct sdm_group_t {
-//     int group_id;               // Group ID, index from 0
-//     portMUX_TYPE spinlock;      // to protect per-group register level concurrent access
-//     sdm_hal_context_t hal; // hal context
-//     sdm_channel_t *channels[SOC_SDM_CHANNELS_PER_GROUP]; // array of sdm channels
-//     sdm_clock_source_t clk_src; // Clock source
-// };
-
-// __attribute__((always_inline))
-// static inline void sdm_ll_set_pulse_density(sdm_channel_handle_t chan, uint32_t density)
-// {
-//     ESP_RETURN_ON_FALSE_ISR(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-//     sdm_group_t *group = chan->group;
-//     int chan_id = chan->chan_id;
-
-//     portENTER_CRITICAL_SAFE(&chan->spinlock);
-//     gpio_sd_dev_t *hw = group->hal.dev;
-//     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan_id], duty, density);
-//     portEXIT_CRITICAL_SAFE(&chan->spinlock);
-
-    
-// }
 
 static bool IRAM_ATTR example_timer_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
@@ -63,9 +41,9 @@ static bool IRAM_ATTR example_timer_callback(gptimer_handle_t timer, const gptim
     phaser += delta;
 
     /* Loop the sine wave data buffer */
-    if (phaser >= EXAMPLE_SINE_WAVE_POINT_NUM) {
+    if (phaser >= EXAMPLE_SINE_WAVE_POINT_NUM_DITHER) {
         //cnt = 0;
-        phaser = 0.0;
+        phaser -= EXAMPLE_SINE_WAVE_POINT_NUM_DITHER;
         // phaser += 0.1f;
     }
     return false;
@@ -129,8 +107,25 @@ static sdm_channel_handle_t example_init_sdm(void)
 void oscillator_init(void)
 {
     /* Initialize sine wave data */
-    for (int i = 0; i < EXAMPLE_SINE_WAVE_POINT_NUM; i++) {
-        sine_wave[i] = (int8_t)((sin(2.0 * (double)i * CONST_PI / EXAMPLE_SINE_WAVE_POINT_NUM)) * EXAMPLE_SINE_WAVE_AMPLITUDE);
+    for (int i = 0; i < EXAMPLE_SINE_WAVE_POINT_NUM_DITHER; i++) {
+        // Add noise shaping and dithering
+        static float error = 0;
+        float sample = sin(2.0 * (double)i * CONST_PI / EXAMPLE_SINE_WAVE_POINT_NUM) * EXAMPLE_SINE_WAVE_AMPLITUDE;
+        
+        // Generate dither noise (-1 to 1)
+        float dither = ((double)rand() / RAND_MAX) * 2.0f - 1.0f;
+        dither *= 0.25f; // Scale dither amplitude
+        
+        // Add dither and previous quantization error with noise shaping filter
+        sample += dither + error * 0.5f;
+
+        // Quantize to int8_t
+        int8_t quantized = (int8_t)sample;
+        
+        // Calculate new error and apply noise shaping
+        error = sample - quantized;
+        
+        sine_wave[i] = quantized;
     }
     /* Initialize sigma-delta modulation on the specific GPIO */
     sdm_channel_handle_t sdm_chan = example_init_sdm();
