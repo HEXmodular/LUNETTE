@@ -1,0 +1,79 @@
+.value-control {
+    width: 100%;
+    max-width: 300px;
+    margin: 20px auto;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.value-display {
+    font-size: 42px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background: #f7f7f7;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.value-slider {
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(to bottom, #4CAF50, #2196F3);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    overflow: hidden;
+}
+
+.value-slider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(255,255,255,0.7);
+    transform: translateY(-50%);
+}
+
+.value-slider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.value-slider.active {
+    transform: scale(0.98);
+    background: linear-gradient(to bottom, #45a049, #1976D2);
+}
+
+/* Touch feedback */
+.value-slider:active {
+    background: linear-gradient(to bottom, #45a049, #1976D2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .value-display {
+        font-size: 36px;
+        padding: 15px;
+    }
+    
+    .value-slider {
+        height: 80px;
+    }
+} 
