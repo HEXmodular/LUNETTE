@@ -1,12 +1,12 @@
 #include <string.h>
 
-#include "esp_mac.h"
-#include "esp_event.h"
+// #include "esp_mac.h"
+// #include "esp_event.h"
 #include <esp_log.h>
-#include "esp_netif.h"
-#include "esp_wifi.h"
-#include "esp_wifi_default.h"
-#include "esp_wifi_types_generic.h"
+// #include "esp_netif.h"
+// #include "esp_wifi.h"
+// #include "esp_wifi_default.h"
+// #include "esp_wifi_types_generic.h"
 // #include "nvs_flash.h"
 #include "web_server.h"
 //#include "api.h"

@@ -39,12 +39,12 @@ class ValueControl {
             ${labelHtml}
             <div class="control-container">
                 <div class="value-display">${this.options.formatValue(this.currentValue)}</div>
-                <div class="value-slider"></div>
+                <!-- <div class="value-slider"></div> -->
             </div>
         `;
         
         this.display = this.element.querySelector('.value-display');
-        this.slider = this.element.querySelector('.value-slider');
+        // this.slider = this.element.querySelector('.value-slider');
         this.label = this.element.querySelector('label');
     }
 
@@ -64,7 +64,8 @@ class ValueControl {
 
     handleTouchStart(e) {
         e.preventDefault();
-        this.handleDragStart(e.touches[0].clientY, this.slider);
+        // this.handleDragStart(e.touches[0].clientY, this.slider);
+         this.handleDragStart(e.touches[0].clientY, this.element);
     }
 
     handleTouchMove(e) {
@@ -76,12 +77,14 @@ class ValueControl {
     handleTouchEnd(e) {
         if (!this.isDragging) return;
         e.preventDefault();
-        this.handleDragEnd(this.slider);
+        // this.handleDragEnd(this.slider);
+        this.handleDragEnd(this.element);
     }
 
     handleMouseDown(e) {
         e.preventDefault();
-        this.handleDragStart(e.clientY, this.slider);
+        // this.handleDragStart(e.clientY, this.slider);
+        this.handleDragStart(e.clientY, this.element);
     }
 
     handleMouseMove(e) {
@@ -93,7 +96,8 @@ class ValueControl {
     handleMouseUp(e) {
         if (!this.isDragging) return;
         e.preventDefault();
-        this.handleDragEnd(this.slider);
+        // this.handleDragEnd(this.slider);
+        this.handleDragEnd(this.element);
     }
 
     addEventListeners() {

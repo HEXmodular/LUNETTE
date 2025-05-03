@@ -8,161 +8,98 @@
     <link rel="stylesheet" href="value-control.css">
 </head>
 <body>
+
+    <!-- oscilator controls -->
     <div class="container">
         <div id="oscillatorControl1" class="oscillator-control"></div>
         <div id="oscillatorContro12" class="oscillator-control"></div>
         <div id="oscillatorContro13" class="oscillator-control"></div>
         <div id="oscillatorContro14" class="oscillator-control"></div>
-        <!-- <div id="oscillator-diagram"></div> -->
+    </div>
+    
+    <!-- logic blocks 1-2 -->
+     <div class="container">  
         <div id="oscillators-container">
+            <div class="title-container">
+                <div class="title">LOP 1</div>
+                <div class="title">LOP 2</div>
+            </div>
             <div class="block-grid-4">
-                <div id="block-container1"></div>
-                <div id="block-container2"></div>
-                <div id="block-container3"></div>
-                <div id="block-container4"></div>
+                <div id="input-container1"></div>
+                <div id="input-container2"></div>
+                <div id="input-container3"></div>
+                <div id="input-container4"></div>
             </div>
         </div>
+
+        <div class="arrow-down-container">
+            <div class="arrow-down">↓</div>
+            <div class="arrow-down">↓</div>
+            <div class="arrow-down">↓</div>
+            <div class="arrow-down">↓</div>
+        </div>
+
+
         <div id="logic-block-container">
             <div class="block-grid-2">
             <div id="logic-block-container1"></div>
             <div id="logic-block-container2"></div>
+            </div>
         </div>
+
+        <div class="arrow-down-container">
+            <div class="arrow-down">↓</div>
+            <div class="arrow-down">↓</div>
+        </div>
+
+        </div>
+
+        <!-- logic blocks 3 -->
+        <div class="container"> 
+
+        <div class="title-container">
+            <div class="title">LOP 3</div>
+        </div>
+
+        <div class="block-grid-2">
+            <div id="input-container5"></div>
+            <div id="input-container6"></div>
+        </div>
+
+        <div class="arrow-down-container">
+            <div class="arrow-down">↓</div>
+            <div class="arrow-down">↓</div>
+        </div>
+
+        <div id="logic-block-container">
+
+            <div id="logic-block-container3"></div>
+
+
+        </div>
+
+        <div class="arrow-down-container">
+            <div class="arrow-down">↓</div>
+
+        </div>
+        
+        <div class="title-container">
+            <div class="title">MIX</div>
+        </div>
+
         <div id="mixer-block-container">
             <div id="mixer-block-container1"></div>
         </div>
         
         </div>
     </div>
-    <script src="scripts.js"></script>
+
     <script src="value-control.js"></script>
+
+    <script src="scripts.js"></script>
+    
     <script>
-        // document.addEventListener('DOMContentLoaded', () => {
-        //     const valueControl = new IntegerValueControl({
-        //         min: 1,
-        //         max: 440,
-        //         initialValue: 220,
-        //         onChange: (value) => {
-        //             updateOscillator(value);
-        //         }
-        //     });
-            
-        //     valueControl.mount('#valueControl');
-        // });
-
-        const oscillatorControl1 = new OscillatorControl('oscillatorControl1', 'OSC 1-4', {
-            onChange: (frequency) => {
-                updateOscillator(0, frequency);
-            },
-        });
-
-        const oscillatorControl2 = new OscillatorControl('oscillatorContro12', 'OSC 2', {
-            onChange: (frequency) => {
-                updateOscillator(1, frequency);
-            },
-            showLabel: false,  // Hide labels
-            showHeader: false
-        });
-
-        const oscillatorControl3 = new OscillatorControl('oscillatorContro13', 'OSC 3', {
-            onChange: (frequency) => {
-                updateOscillator(2, frequency);
-            },
-            showLabel: false,  // Hide labels
-            showHeader: false
-        });
-
-        const oscillatorControl4 = new OscillatorControl('oscillatorContro14', 'OSC 4', {
-            onChange: (frequency) => {
-                updateOscillator(3, frequency);
-            },
-            showLabel: false,  // Show labels
-            showHeader: false
-        });
-        
-        
-
-        // const diagram = new OscillatorDiagram('oscillator-diagram');
-
-        // // Очистить все соединения
-        // diagram.clearConnections();
-
-        // // Активировать соединение с подписью
-        // diagram.setConnection('osc-1', 'osc-2', true, 'AND');
-
-        // // Активировать соединение без подписи
-        // diagram.setConnection('osc-2', 'osc-3', true, 'XOR');
-
-        // // Деактивировать соединение (подпись скроется)
-        // diagram.setConnection('osc-3', 'osc-4', true, 'OR');
-
-        // // Получить список активных соединений
-        // const activeConnections = diagram.getActiveConnections();
-
- const blockControlOsc1 = new LogicBlockControl('#block-container1', {
-    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
-    columns: 2,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-
-const blockControlOsc2 = new LogicBlockControl('#block-container2', {
-    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
-    columns: 2,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-
-const blockControlOsc3 = new LogicBlockControl('#block-container3', {
-    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
-    columns: 2,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-
-const blockControlOsc4 = new LogicBlockControl('#block-container4', {
-    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
-    columns: 2,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-
-const logicBlockControl1 = new LogicBlockControl('#logic-block-container1', {
-    labels: ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR', 'OFF'],
-    columns: 2,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Logic block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-
-const logicBlockControl2 = new LogicBlockControl('#logic-block-container2', {
-    labels: ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR', 'OFF'],
-    columns: 2,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Logic block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-
-const mixerBlockControl = new LogicBlockControl('#mixer-block-container1', {
-    labels: ['1', '2', 'L1', 'L2', 'OFF', 'L3', '3', '4'],
-    columns: 8,
-    mode: 'single',
-    onChange: (index, active) => {
-        console.log(`Mixer block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
-    }
-});
-        // Пример динамического изменения видимости меток
-        // oscillatorControl1.setLabelVisibility(false);  // Скрыть метки
-        // oscillatorControl2.setLabelVisibility(true);   // Показать метки
+       
     </script>
 </body>
 </html> 

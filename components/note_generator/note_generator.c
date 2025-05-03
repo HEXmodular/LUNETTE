@@ -37,7 +37,7 @@ static bool IRAM_ATTR example_timer_callback(gptimer_handle_t timer, const gptim
     static double output_value = 0;
     sdm_channel_handle_t sdm_chan = (sdm_channel_handle_t)user_ctx;
 
-output_value = square_wave[(int)phaser[0]]; 
+output_value = square_wave[(int)phaser[0]] & square_wave[(int)phaser[1]]; 
     /* Set the pulse density */
     //sdm_channel_set_pulse_density(sdm_chan, sine_wave[(int)phaser]);
     //& square_wave[(int)phaser[1]];
