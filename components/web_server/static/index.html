@@ -51,13 +51,13 @@
 
         const oscillatorControl1 = new OscillatorControl('oscillatorControl1', 'OSC 1-4', {
             onChange: (frequency) => {
-                updateOscillator('1', frequency);
+                updateOscillator(0, frequency);
             },
         });
 
         const oscillatorControl2 = new OscillatorControl('oscillatorContro12', 'OSC 2', {
             onChange: (frequency) => {
-                updateOscillator('2', frequency);
+                updateOscillator(1, frequency);
             },
             showLabel: false,  // Hide labels
             showHeader: false
@@ -65,7 +65,7 @@
 
         const oscillatorControl3 = new OscillatorControl('oscillatorContro13', 'OSC 3', {
             onChange: (frequency) => {
-                updateOscillator('3', frequency);
+                updateOscillator(2, frequency);
             },
             showLabel: false,  // Hide labels
             showHeader: false
@@ -73,7 +73,7 @@
 
         const oscillatorControl4 = new OscillatorControl('oscillatorContro14', 'OSC 4', {
             onChange: (frequency) => {
-                updateOscillator('4', frequency);
+                updateOscillator(3, frequency);
             },
             showLabel: false,  // Show labels
             showHeader: false

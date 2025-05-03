@@ -16,6 +16,6 @@ oscillator_data_t oscillator_data[4] = {
 void update_oscillator_data(int oscillator_id, double freq, double amp) {
     oscillator_data[oscillator_id].frequency = freq;
     oscillator_data[oscillator_id].amplitude = amp;
-    oscillator_set_frequency(freq);
+    oscillator_set_frequency(oscillator_id, freq, amp);
     ESP_LOGI(TAG, "Oscillator data updated: freq=%.1f, amp=%.1f", freq, amp);
 } 

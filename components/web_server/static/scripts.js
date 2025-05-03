@@ -11,6 +11,7 @@ function updateOscillator(oscillator_id, value) {
             body: JSON.stringify({
                 oscillator_id: oscillator_id,
                 frequency: value,
+                amplitude: 127,
             })
         })
         .then(response => {

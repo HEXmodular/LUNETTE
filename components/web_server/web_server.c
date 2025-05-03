@@ -231,9 +231,41 @@ static esp_err_t api_data_handler_post(httpd_req_t *req)
     cJSON *root = cJSON_Parse(content);
 
     // Get the frequency and amplitude from the request data
-    int oscillator_id = cJSON_GetObjectItem(root, "oscillator_id")->valueint;
-    double frequency = cJSON_GetObjectItem(root, "frequency")->valuedouble;
-    double amplitude = cJSON_GetObjectItem(root, "amplitude")->valuedouble;
+    cJSON *oscillator_id_obj = cJSON_GetObjectItem(root, "oscillator_id");
+    cJSON *frequency_obj = cJSON_GetObjectItem(root, "frequency");
+    cJSON *amplitude_obj = cJSON_GetObjectItem(root, "amplitude");
+
+    if (!oscillator_id_obj || !frequency_obj || !amplitude_obj) {
+        const char* missing_field = NULL;
+        if (!oscillator_id_obj) missing_field = "oscillator_id";
+        else if (!frequency_obj) missing_field = "frequency"; 
+        else if (!amplitude_obj) missing_field = "amplitude";
+        
+        ESP_LOGE(TAG, "Missing required field in JSON: %s", missing_field);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Missing required field");
+        cJSON_Delete(root);
+        return ESP_FAIL;
+    }
+
+    const char* invalid_field = NULL;
+    if (!cJSON_IsNumber(oscillator_id_obj)) invalid_field = "oscillator_id";
+    else if (!cJSON_IsNumber(frequency_obj)) invalid_field = "frequency";
+    else if (!cJSON_IsNumber(amplitude_obj)) invalid_field = "amplitude";
+
+    if (invalid_field) {
+        ESP_LOGE(TAG, "Invalid field type in JSON for field: %s", invalid_field);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid field type");
+        cJSON_Delete(root);
+        return ESP_FAIL;
+    }
+
+    int oscillator_id = oscillator_id_obj->valueint;
+    double frequency = frequency_obj->valuedouble;
+    double amplitude = amplitude_obj->valuedouble;
+
+    ESP_LOGD(TAG, "Oscillator ID: %d", oscillator_id);
+    ESP_LOGD(TAG, "Frequency: %f", frequency);
+    ESP_LOGD(TAG, "Amplitude: %f", amplitude);
 
     // Update the oscillator data
     update_oscillator_data(oscillator_id, frequency, amplitude);

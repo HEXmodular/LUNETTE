@@ -18,34 +18,38 @@
 #define EXAMPLE_SINE_WAVE_FREQ_HZ       (100)               // 100 Hz sine wave, adjust this value to decide the sine wave frequency
 #define EXAMPLE_SINE_WAVE_AMPLITUDE     (90.0)            // 1 ~ 127, adjust this value to decide the sine wave amplitude
 #define EXAMPLE_SINE_WAVE_POINT_NUM     (MHZ / (EXAMPLE_CALLBACK_INTERVAL_US * EXAMPLE_SINE_WAVE_FREQ_HZ)) // 1000000 / (100 * 100)  = 100
-#define EXAMPLE_SINE_WAVE_POINT_NUM_DITHER (EXAMPLE_SINE_WAVE_POINT_NUM * 2)
+#define EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED (EXAMPLE_SINE_WAVE_POINT_NUM * 2)
 
 ESP_STATIC_ASSERT(EXAMPLE_SINE_WAVE_POINT_NUM > 1, "Sine wave frequency is too high");
 ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");
 
 static const char *TAG = "sdm_dac";
-static int8_t sine_wave[EXAMPLE_SINE_WAVE_POINT_NUM_DITHER];   // Sine wave data buffer
-static double current_frequency = 100.0; // Current frequency in Hz
-static double delta = 1.0;
+static int8_t sine_wave[EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED];   // Sine wave data buffer
+static int8_t square_wave[EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED]; // Square wave data buffer
+static double current_frequency[4] = {100.0, 100.0, 100.0, 100.0}; // Current frequency in Hz
+static double delta[4] = {1.0, 1.0, 1.0, 1.0};
 
 
 static bool IRAM_ATTR example_timer_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
 
-    static double phaser = 0.0;
+    static double phaser[4] = {0.0, 0.0, 0.0, 0.0};
+    static double output_value = 0;
     sdm_channel_handle_t sdm_chan = (sdm_channel_handle_t)user_ctx;
 
-
+output_value = square_wave[(int)phaser[0]]; 
     /* Set the pulse density */
-    sdm_channel_set_pulse_density(sdm_chan, sine_wave[(int)phaser]);
-    phaser += delta;
-
-    /* Loop the sine wave data buffer */
-    if (phaser >= EXAMPLE_SINE_WAVE_POINT_NUM_DITHER) {
-        //cnt = 0;
-        phaser -= EXAMPLE_SINE_WAVE_POINT_NUM_DITHER;
-        // phaser += 0.1f;
+    //sdm_channel_set_pulse_density(sdm_chan, sine_wave[(int)phaser]);
+    //& square_wave[(int)phaser[1]];
+    sdm_channel_set_pulse_density(sdm_chan, (int)output_value);
+    
+    for (int i = 0; i < 4; i++) {
+        phaser[i] += delta[i];
+        if (phaser[i] >= EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED) {
+            phaser[i] -= EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED;
+        }
     }
+
     return false;
 }
 
@@ -107,17 +111,17 @@ static sdm_channel_handle_t example_init_sdm(void)
 void oscillator_init(void)
 {
     /* Initialize sine wave data */
-    for (int i = 0; i < EXAMPLE_SINE_WAVE_POINT_NUM_DITHER; i++) {
+    for (int i = 0; i < EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED; i++) {
         // Add noise shaping and dithering
-        static float error = 0;
-        float sample = sin(2.0 * (double)i * CONST_PI / EXAMPLE_SINE_WAVE_POINT_NUM) * EXAMPLE_SINE_WAVE_AMPLITUDE;
+        static double error = 0;
+        double sample = sin(2.0 * (double)i * CONST_PI / EXAMPLE_SINE_WAVE_POINT_NUM) * EXAMPLE_SINE_WAVE_AMPLITUDE;
         
         // Generate dither noise (-1 to 1)
-        float dither = ((double)rand() / RAND_MAX) * 2.0f - 1.0f;
-        dither *= 0.25f; // Scale dither amplitude
+        double dither = ((double)rand() / RAND_MAX) * 2.0 - 1.0;
+        dither *= 2.0/256.0; // two bits of dither
         
         // Add dither and previous quantization error with noise shaping filter
-        sample += dither + error * 0.5f;
+        sample += dither + error * 0.5;
 
         // Quantize to int8_t
         int8_t quantized = (int8_t)sample;
@@ -127,6 +131,12 @@ void oscillator_init(void)
         
         sine_wave[i] = quantized;
     }
+
+    // Initialize square wave data
+    for (int i = 0; i < EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED; i++) {
+        square_wave[i] = (i < EXAMPLE_SINE_WAVE_POINT_NUM_DITHERED / 4) ? 127 : -128;
+    }
+
     /* Initialize sigma-delta modulation on the specific GPIO */
     sdm_channel_handle_t sdm_chan = example_init_sdm();
     /* Initialize GPTimer and register the timer alarm callback */
@@ -136,17 +146,17 @@ void oscillator_init(void)
     ESP_ERROR_CHECK(gptimer_start(timer_handle));
 }
 
-void oscillator_set_frequency(double frequency_hz) {
+void oscillator_set_frequency(int oscillator_id, double frequency_hz, double amplitude) {
     if (frequency_hz <= 0) {
         ESP_LOGE(TAG, "Invalid frequency: %f Hz", frequency_hz);
         return;
     }
 
-    current_frequency = frequency_hz;
+    current_frequency[oscillator_id] = frequency_hz;
     
     // Calculate delta for smooth frequency transition
-    delta = 1 + ((current_frequency - EXAMPLE_SINE_WAVE_FREQ_HZ) * 0.01);
+    delta[oscillator_id] = 1 + ((current_frequency[oscillator_id] - EXAMPLE_SINE_WAVE_FREQ_HZ) * 0.01);
     //  1+ (200 - 100) * 0.01 = 1
 
-    ESP_LOGI(TAG, "Frequency set to %d Hz", (int)current_frequency);
+    ESP_LOGI(TAG, "Frequency set to %d Hz", (int)current_frequency[oscillator_id]);
 }
