@@ -1,32 +1,66 @@
-# _Sample project_
+# LUNETTE
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+[English](#english) | [Русский](#russian)
 
-This is the simplest buildable example. The example is used by command `idf.py create-project`
-that copies the project to user specified path and set it's name. For more information follow the [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project)
+## English
 
+### Description
+LUNETTE - is a synthesizer based on the LUNETTA synthesis concept, using multiple logic chips. It runs on ESP32 microcontrollers. All control is optimized for phones with touch capabilities.
 
+### Features
+- Phone control
+- User-friendly interface 
+- Future peripheral output for logic chip simulation
 
-## How to use example
-We encourage the users to use the example as a template for the new projects.
-A recommended way is to follow the instructions on a [docs page](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/build-system.html#start-a-new-project).
+### Getting Started
 
-## Example folder contents
-
-The project **sample_project** contains one source file in C language [main.c](main/main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt`
-files that provide set of directives and instructions describing the project's source files and targets
-(executable, library, or both). 
-
-Below is short explanation of remaining files in the project folder.
-
+#### Installation
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/lunette.git
 ```
-├── CMakeLists.txt
-├── main
-│   ├── CMakeLists.txt
-│   └── main.c
-└── README.md                  This is the file you are currently reading
+2. Download and install ESP-IDF from https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html
+3. If you need to set up the environment, follow the instructions at the link or prepare the IDE https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/vscode-setup.html
+
+### Technologies Used
+- C/C++
+- ESP-IDF
+
+### Contributing
+We welcome your contributions to the project! Feel free to submit Pull Requests.
+
+### License
+This project is distributed under the MIT license - see the LICENSE file for details.
+
+---
+
+## Русский
+
+### Описание
+LUNETTE - это синтезатор на основе концепции синтеза LUNETTA, с использованием множества разных логических чипов. Работает на микроконтроллерах ESP32. Все управление заточено на телефон с его тач возможностями. 
+
+### Возможности
+- Управление с телефона
+- Удобный интерфейс
+- В будущем будет вывод переферии для симуляции логических чипов
+
+
+### Начало работы
+
+#### Установка
+1. Клонируйте репозиторий:
+```bash
+git clone https://github.com/yourusername/lunette.git
 ```
-Additionally, the sample project contains Makefile and component.mk files, used for the legacy Make based build system. 
-They are not used or needed when building with CMake and idf.py.
+2. Скачайте и установите ESP-IDF по ссылке https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-macos-setup.html
+3. Если нужно настроить среду, следуйте инструкциям по ссылке или подготовте IDE https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/vscode-setup.html
+
+### Используемые технологии
+- С/С++
+- ESP-IDF
+
+### Участие в разработке
+Мы приветствуем ваш вклад в проект! Не стесняйтесь отправлять Pull Request.
+
+### Лицензия
+Этот проект распространяется под лицензией MIT - подробности в файле LICENSE.
