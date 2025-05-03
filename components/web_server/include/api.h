@@ -11,9 +11,9 @@ typedef struct {
 } oscillator_data_t;
 
 // Global sensor data
-extern oscillator_data_t oscillator_data;
+extern oscillator_data_t oscillator_data[4];
 
 // Function to update oscillator data
-void update_oscillator_data(double freq, double amp);
+void update_oscillator_data(int oscillator_id, double freq, double amp);
 
 #endif // API_DATA_H 

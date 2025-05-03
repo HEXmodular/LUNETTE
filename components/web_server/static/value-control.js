@@ -6,6 +6,7 @@ class ValueControl {
             min: 0,
             max: 100,
             initialValue: 50,
+            showLabel: true,
             onChange: null,
             formatValue: (value) => value.toString(),
             ...options
@@ -29,8 +30,13 @@ class ValueControl {
     createElements() {
         this.element = document.createElement('div');
         this.element.className = 'value-control';
+        
+        // Create label only if showLabel is true
+        const labelHtml = this.options.showLabel ? 
+            `<label for="${this.options.id}">${this.options.label}</label>` : '';
+            
         this.element.innerHTML = `
-            <label for="${this.options.id}">${this.options.label}</label>
+            ${labelHtml}
             <div class="control-container">
                 <div class="value-display">${this.options.formatValue(this.currentValue)}</div>
                 <div class="value-slider"></div>
@@ -39,6 +45,7 @@ class ValueControl {
         
         this.display = this.element.querySelector('.value-display');
         this.slider = this.element.querySelector('.value-slider');
+        this.label = this.element.querySelector('label');
     }
 
     handleDragStart(y, control) {
@@ -183,23 +190,49 @@ class ValueControl {
             this.element.parentNode.removeChild(this.element);
         }
     }
+
+    // Add method to toggle label visibility
+    setLabelVisibility(visible) {
+        this.options.showLabel = visible;
+        if (visible) {
+            if (!this.label) {
+                const label = document.createElement('label');
+                label.setAttribute('for', this.options.id);
+                label.textContent = this.options.label;
+                this.element.insertBefore(label, this.element.firstChild);
+                this.label = label;
+            }
+        } else {
+            if (this.label) {
+                this.label.remove();
+                this.label = null;
+            }
+        }
+    }
 }
 
 // Oscillator Control
 class OscillatorControl {
     constructor(containerId, header, options = {}) {
         this.container = document.getElementById(containerId);
-        this.container.innerHTML = `<div class="title">${header}</div>`;
-        
         if (!this.container) {
             throw new Error(`Container element with id '${containerId}' not found`);
         }
         
         this.options = {
             onChange: null,
+            showHeader: true,  // Add option to control header visibility
+            showLabel: true,   // Add option to control label visibility
             ...options
         };
 
+        // Only add header if showHeader is true
+        if (this.options.showHeader) {
+            this.container.innerHTML = `<div class="title">${header}</div>`;
+        } else {
+            this.container.innerHTML = '';  // Clear container if no header
+        }
+        
         this.noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         this.isUpdating = false;
         
@@ -210,7 +243,8 @@ class OscillatorControl {
             max: 2000,
             initialValue: 440,
             onChange: (value) => this.onFrequencyChange(value),
-            formatValue: (value) => `${Math.round(value)} Hz`
+            formatValue: (value) => `${Math.round(value)} Hz`,
+            showLabel: this.options.showLabel
         });
 
         this.noteControl = new ValueControl({
@@ -220,7 +254,8 @@ class OscillatorControl {
             max: 127,
             initialValue: 69,
             onChange: (value) => this.onNoteChange(value),
-            formatValue: (value) => this.getNoteDisplay(value)
+            formatValue: (value) => this.getNoteDisplay(value),
+            showLabel: this.options.showLabel
         });
 
         this.init();
@@ -271,6 +306,29 @@ class OscillatorControl {
 
     midiNoteToFrequency(note) {
         return 440 * Math.pow(2, (note - 69) / 12);
+    }
+
+    // Add method to toggle header visibility
+    setHeaderVisibility(visible) {
+        this.options.showHeader = visible;
+        if (visible) {
+            const title = document.createElement('div');
+            title.className = 'title';
+            title.textContent = this.header;
+            this.container.insertBefore(title, this.container.firstChild);
+        } else {
+            const title = this.container.querySelector('.title');
+            if (title) {
+                title.remove();
+            }
+        }
+    }
+
+    // Add method to toggle label visibility for both controls
+    setLabelVisibility(visible) {
+        this.options.showLabel = visible;
+        this.frequencyControl.setLabelVisibility(visible);
+        this.noteControl.setLabelVisibility(visible);
     }
 }
 
@@ -439,3 +497,158 @@ class OscillatorDiagram {
         this.updateConnections();
     }
 }
+
+// Logic Matrix Control
+class LogicMatrixControl {
+    constructor(containerSelector, options = {}) {
+        this.container = typeof containerSelector === 'string'
+            ? document.querySelector(containerSelector)
+            : containerSelector;
+        if (!this.container) throw new Error('Container not found');
+
+        this.rows = options.rows || ['OR', 'AND', 'XOR', '-', 'NOR', 'NAND', '-', 'OFF'];
+        this.cols = options.cols || ['L1', 'L2', 'L3', 'OFF'];
+        this.onChange = options.onChange || null;
+        this.state = Array(this.rows.length).fill(null).map(() => Array(this.cols.length).fill(false));
+
+        this.render();
+    }
+
+    render() {
+        this.element = document.createElement('div');
+        this.element.className = 'logic-matrix-control';
+        const table = document.createElement('table');
+        table.className = 'logic-matrix-table';
+
+        // Header
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        headRow.appendChild(document.createElement('th'));
+        for (const col of this.cols) {
+            const th = document.createElement('th');
+            th.textContent = col;
+            headRow.appendChild(th);
+        }
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        // Body
+        const tbody = document.createElement('tbody');
+        for (let i = 0; i < this.rows.length; i++) {
+            const tr = document.createElement('tr');
+            const rowLabel = document.createElement('td');
+            rowLabel.textContent = this.rows[i];
+            tr.appendChild(rowLabel);
+            for (let j = 0; j < this.cols.length; j++) {
+                const td = document.createElement('td');
+                const btn = document.createElement('button');
+                btn.className = 'logic-matrix-btn';
+                btn.textContent = this.state[i][j] ? 'ON' : 'OFF';
+                btn.dataset.row = i;
+                btn.dataset.col = j;
+                btn.onclick = () => this.toggle(i, j, btn);
+                td.appendChild(btn);
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        this.element.innerHTML = '';
+        this.element.appendChild(table);
+        this.container.innerHTML = '';
+        this.container.appendChild(this.element);
+    }
+
+    toggle(i, j, btn) {
+        this.state[i][j] = !this.state[i][j];
+        btn.textContent = this.state[i][j] ? 'ON' : 'OFF';
+        btn.classList.toggle('active', this.state[i][j]);
+        if (this.onChange) {
+            this.onChange(i, j, this.state[i][j]);
+        }
+    }
+
+    setState(i, j, value) {
+        this.state[i][j] = !!value;
+        this.render();
+    }
+
+    getState(i, j) {
+        return this.state[i][j];
+    }
+}
+
+class LogicBlockControl {
+    constructor(containerSelector, options = {}) {
+        this.container = typeof containerSelector === 'string'
+            ? document.querySelector(containerSelector)
+            : containerSelector;
+        if (!this.container) throw new Error('Container not found');
+
+        this.labels = options.labels || [];
+        this.columns = options.columns || 4;
+        this.mode = options.mode || 'multiple'; // 'multiple' or 'single'
+        this.onChange = options.onChange || null;
+        this.state = Array(this.labels.length).fill(false);
+
+        this.render();
+    }
+
+    render() {
+        this.element = document.createElement('div');
+        this.element.className = 'logic-block-control';
+        this.element.style.display = 'grid';
+        this.element.style.gridTemplateColumns = `repeat(${this.columns}, 1fr)`;
+        this.element.style.gap = '2px';
+
+        this.buttons = [];
+        for (let i = 0; i < this.labels.length; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'logic-block-btn';
+            btn.textContent = this.labels[i];
+            btn.dataset.index = i;
+            btn.classList.toggle('active', this.state[i]);
+            btn.onclick = () => this.toggle(i, btn);
+            this.element.appendChild(btn);
+            this.buttons.push(btn);
+        }
+        this.container.innerHTML = '';
+        this.container.appendChild(this.element);
+    }
+
+    toggle(i, btn) {
+        if (this.mode === 'single') {
+            // Деактивировать все, кроме выбранной
+            this.state = this.state.map((_, idx) => idx === i);
+            this.buttons.forEach((b, idx) => b.classList.toggle('active', idx === i));
+            if (this.onChange) {
+                this.onChange(i, true);
+            }
+        } else {
+            // Множественный выбор
+            this.state[i] = !this.state[i];
+            btn.classList.toggle('active', this.state[i]);
+            if (this.onChange) {
+                this.onChange(i, this.state[i]);
+            }
+        }
+    }
+
+    setState(i, value) {
+        if (this.mode === 'single') {
+            this.state = this.state.map((_, idx) => idx === i && !!value);
+        } else {
+            this.state[i] = !!value;
+        }
+        this.render();
+    }
+
+    getState(i) {
+        return this.state[i];
+    }
+
+    getActiveIndices() {
+        return this.state.map((v, i) => v ? i : -1).filter(i => i !== -1);
+    }
+}
+

@@ -13,7 +13,25 @@
         <div id="oscillatorContro12" class="oscillator-control"></div>
         <div id="oscillatorContro13" class="oscillator-control"></div>
         <div id="oscillatorContro14" class="oscillator-control"></div>
-        <div id="oscillator-diagram"></div>
+        <!-- <div id="oscillator-diagram"></div> -->
+        <div id="oscillators-container">
+            <div class="block-grid-4">
+                <div id="block-container1"></div>
+                <div id="block-container2"></div>
+                <div id="block-container3"></div>
+                <div id="block-container4"></div>
+            </div>
+        </div>
+        <div id="logic-block-container">
+            <div class="block-grid-2">
+            <div id="logic-block-container1"></div>
+            <div id="logic-block-container2"></div>
+        </div>
+        <div id="mixer-block-container">
+            <div id="mixer-block-container1"></div>
+        </div>
+        
+        </div>
     </div>
     <script src="scripts.js"></script>
     <script src="value-control.js"></script>
@@ -33,50 +51,118 @@
 
         const oscillatorControl1 = new OscillatorControl('oscillatorControl1', 'OSC 1-4', {
             onChange: (frequency) => {
-                updateOscillator(frequency);
-            }
+                updateOscillator('1', frequency);
+            },
         });
 
-        const oscillatorControl2 = new OscillatorControl('oscillatorContro12', 'OSC2', {
+        const oscillatorControl2 = new OscillatorControl('oscillatorContro12', 'OSC 2', {
             onChange: (frequency) => {
-                updateOscillator(frequency);
-            }
+                updateOscillator('2', frequency);
+            },
+            showLabel: false,  // Hide labels
+            showHeader: false
         });
 
-        const oscillatorControl3 = new OscillatorControl('oscillatorContro13', 'OSC3', {
+        const oscillatorControl3 = new OscillatorControl('oscillatorContro13', 'OSC 3', {
             onChange: (frequency) => {
-                updateOscillator(frequency);
-            }
+                updateOscillator('3', frequency);
+            },
+            showLabel: false,  // Hide labels
+            showHeader: false
         });
 
-        const oscillatorControl4 = new OscillatorControl('oscillatorContro14', 'OSC4', {
+        const oscillatorControl4 = new OscillatorControl('oscillatorContro14', 'OSC 4', {
             onChange: (frequency) => {
-                updateOscillator(frequency);
-            }
+                updateOscillator('4', frequency);
+            },
+            showLabel: false,  // Show labels
+            showHeader: false
         });
         
         
 
-        const diagram = new OscillatorDiagram('oscillator-diagram');
+        // const diagram = new OscillatorDiagram('oscillator-diagram');
 
-        // Очистить все соединения
-        diagram.clearConnections();
+        // // Очистить все соединения
+        // diagram.clearConnections();
 
-        // Активировать соединение с подписью
-        diagram.setConnection('osc-1', 'osc-2', true, 'OR');
+        // // Активировать соединение с подписью
+        // diagram.setConnection('osc-1', 'osc-2', true, 'AND');
 
-        // Активировать соединение без подписи
-        diagram.setConnection('osc-2', 'osc-3', true, 'AND');
+        // // Активировать соединение без подписи
+        // diagram.setConnection('osc-2', 'osc-3', true, 'XOR');
 
-        // Деактивировать соединение (подпись скроется)
-        diagram.setConnection('osc-3', 'osc-4', true, 'XOR');
+        // // Деактивировать соединение (подпись скроется)
+        // diagram.setConnection('osc-3', 'osc-4', true, 'OR');
 
-        // Получить список активных соединений
-        const activeConnections = diagram.getActiveConnections();
+        // // Получить список активных соединений
+        // const activeConnections = diagram.getActiveConnections();
 
-        // todo добавить возможность активировать/деактивировать один из осцилляторов
-        // todo добавить возможность убрать заголовки у компонентов
-        // todo добавить возможность кликомом выбрать тип соединения
+ const blockControlOsc1 = new LogicBlockControl('#block-container1', {
+    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
+    columns: 2,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+
+const blockControlOsc2 = new LogicBlockControl('#block-container2', {
+    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
+    columns: 2,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+
+const blockControlOsc3 = new LogicBlockControl('#block-container3', {
+    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
+    columns: 2,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+
+const blockControlOsc4 = new LogicBlockControl('#block-container4', {
+    labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
+    columns: 2,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+
+const logicBlockControl1 = new LogicBlockControl('#logic-block-container1', {
+    labels: ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR', 'OFF'],
+    columns: 2,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Logic block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+
+const logicBlockControl2 = new LogicBlockControl('#logic-block-container2', {
+    labels: ['AND', 'OR', 'XOR', 'NAND', 'NOR', 'XNOR', 'OFF'],
+    columns: 2,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Logic block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+
+const mixerBlockControl = new LogicBlockControl('#mixer-block-container1', {
+    labels: ['1', '2', 'L1', 'L2', 'OFF', 'L3', '3', '4'],
+    columns: 8,
+    mode: 'single',
+    onChange: (index, active) => {
+        console.log(`Mixer block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+    }
+});
+        // Пример динамического изменения видимости меток
+        // oscillatorControl1.setLabelVisibility(false);  // Скрыть метки
+        // oscillatorControl2.setLabelVisibility(true);   // Показать метки
     </script>
 </body>
 </html> 

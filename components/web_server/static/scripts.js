@@ -1,4 +1,4 @@
-function updateOscillator(value) {
+function updateOscillator(oscillator_id, value) {
     // Only send if not already sending
     if (!updateOscillator.isSending) {
         updateOscillator.isSending = true;
@@ -9,6 +9,7 @@ function updateOscillator(value) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                oscillator_id: oscillator_id,
                 frequency: value,
             })
         })

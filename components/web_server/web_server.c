@@ -1,16 +1,19 @@
+#include "web_server.h"
+#include "api.h"
+
 #include <string.h>
 #include "esp_log.h"
 #include "esp_http_server.h"
-#include "esp_vfs.h"
+// #include "esp_vfs.h"
 #include "cJSON.h"
-#include "web_server.h"
-#include "api.h"
+
 
 //TODO переписать нафиг всю работу с путями
 
 static const char *TAG = "web_server";
 static httpd_handle_t server = NULL;
 
+extern oscillator_data_t oscillator_data[4];
 
 // Helper function to send file content
 static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
@@ -151,9 +154,14 @@ static esp_err_t api_data_handler_get(httpd_req_t *req)
 
     // Add sensor data to JSON
     ESP_LOGD(TAG, "Adding oscillator data to JSON");
-    cJSON_AddNumberToObject(root, "frequency", oscillator_data.frequency);
-    cJSON_AddNumberToObject(root, "amplitude", oscillator_data.amplitude);
-
+    cJSON *arr = cJSON_CreateArray();
+    for (int i = 0; i < 4; i++) {
+        cJSON *osc = cJSON_CreateObject();
+        cJSON_AddNumberToObject(osc, "frequency", oscillator_data[i].frequency);
+        cJSON_AddNumberToObject(osc, "amplitude", oscillator_data[i].amplitude);
+        cJSON_AddItemToArray(arr, osc);
+    }
+    cJSON_AddItemToObject(root, "oscillators", arr);
 
     // Convert JSON to string
     ESP_LOGD(TAG, "Converting JSON to string");
@@ -223,12 +231,12 @@ static esp_err_t api_data_handler_post(httpd_req_t *req)
     cJSON *root = cJSON_Parse(content);
 
     // Get the frequency and amplitude from the request data
+    int oscillator_id = cJSON_GetObjectItem(root, "oscillator_id")->valueint;
     double frequency = cJSON_GetObjectItem(root, "frequency")->valuedouble;
     double amplitude = cJSON_GetObjectItem(root, "amplitude")->valuedouble;
-    ESP_LOGD(TAG, "Oscillator data: frequency = %f, amplitude = %f", frequency, amplitude);
 
     // Update the oscillator data
-    update_oscillator_data(frequency, amplitude);
+    update_oscillator_data(oscillator_id, frequency, amplitude);
 
     cJSON_Delete(root);
     httpd_resp_sendstr(req, "Post control value successfully");
