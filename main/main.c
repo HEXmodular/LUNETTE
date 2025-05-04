@@ -3,15 +3,12 @@
 #include <esp_log.h>
 #include "wifi_station.h"
 #include "web_server.h"
-#include "oscillator.h"
-
+#include "oscillator_logic.h"
 static const char *TAG = "MAIN";
 
 void app_main(void)
 {
-
-
-    oscillator_init();
+   oscillator_logic_init();
 
     //ESP_LOGI(TAG, "ESP_WIFI_MODE_AP");
     //wifi_init_softap();

@@ -1,0 +1,18 @@
+LUNETTE Project Instructions
+
+1. Audio Processing Rules
+- Use double for audio samples
+
+2. Log inclusion Rules
+- use #include <esp_log.h> in .c files
+- use log in PRIV_REQUIRES in CMakeLists file
+
+2. Ignore Directories
+- build/
+- .git/
+- .vscode/
+- .devcontainer/
+
+3. Important Notes
+- Test changes before committing
+- Follow ESP-IDF coding style 

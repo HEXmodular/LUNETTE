@@ -2,7 +2,7 @@ idf_component_register(
     SRCS "web_server.c" "api.c"
     INCLUDE_DIRS "include"
     REQUIRES esp_http_server esp_common json
-    PRIV_REQUIRES oscillator
+    PRIV_REQUIRES oscillator oscillator_logic
     EMBED_FILES "static/index.html" "static/scripts.js" "static/value-control.js" "static/value-control.css" "static/style.css"
 )
 

@@ -1,5 +1,7 @@
 #include "web_server.h"
 #include "api.h"
+#include "oscillator.h"
+#include "oscillator_logic.h"
 
 #include <string.h>
 #include "esp_log.h"
@@ -12,8 +14,6 @@
 
 static const char *TAG = "web_server";
 static httpd_handle_t server = NULL;
-
-extern oscillator_data_t oscillator_data[4];
 
 // Helper function to send file content
 static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
@@ -155,10 +155,13 @@ static esp_err_t api_data_handler_get(httpd_req_t *req)
     // Add sensor data to JSON
     ESP_LOGD(TAG, "Adding oscillator data to JSON");
     cJSON *arr = cJSON_CreateArray();
+
+    Oscillator* oscillators = oscillator_logic_get_oscillators();
+
     for (int i = 0; i < 4; i++) {
         cJSON *osc = cJSON_CreateObject();
-        cJSON_AddNumberToObject(osc, "frequency", oscillator_data[i].frequency);
-        cJSON_AddNumberToObject(osc, "amplitude", oscillator_data[i].amplitude);
+        cJSON_AddNumberToObject(osc, "frequency", oscillators[i].frequency);
+        cJSON_AddNumberToObject(osc, "amplitude", oscillators[i].amplitude);
         cJSON_AddItemToArray(arr, osc);
     }
     cJSON_AddItemToObject(root, "oscillators", arr);
