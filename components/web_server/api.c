@@ -1,7 +1,7 @@
 #include "api.h"
 #include <string.h>
 #include "esp_log.h"
-#include "note_generator.h"
+#include "oscillator.h"
 
 static const char *TAG = "api";
 
