@@ -34,3 +34,8 @@ esp_err_t oscillator_logic_get_enabled(bool *enabled);
  * @return Oscillator* Pointer to the oscillators array
  */
 Oscillator* oscillator_logic_get_oscillators(void); 
+
+/**
+ * @brief Process the next boolean values from all oscillators and apply logical operations
+ */
+void oscillator_logic_next_bool(void);

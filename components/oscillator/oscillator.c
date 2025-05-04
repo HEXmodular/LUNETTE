@@ -53,32 +53,33 @@ double* oscillator_get_result_pointer(Oscillator* osc) {
     return &osc->result;
 }
 
-bool oscillator_next_bool(Oscillator* osc) {
-    if (!osc) return false;
+void oscillator_calculate_bool(volatile Oscillator* osc) {
+    if (!osc) return;
 
     // Get sample from wavetable
     bool sample = osc->wavetable[osc->table_index] > 0.0;
 
     // Update table index based on frequency
     osc->table_index += (int)(osc->phase_increment);
+    osc->result_bool = sample;
     
     // Keep index in range
     if (osc->table_index >= WAVETABLE_SIZE) {
         osc->table_index -= WAVETABLE_SIZE;
         osc->phase_increment -= WAVETABLE_SIZE;
     }
-
-    return sample;
 }
 
-double oscillator_next(Oscillator* osc) {
-    if (!osc) return 0.0;
+void oscillator_calculate(Oscillator* osc) {
+    if (!osc) return;
     
     // Get sample from wavetable
     double sample = osc->amplitude * osc->wavetable[osc->table_index];
     
     // Update table index based on frequency
     osc->table_index += (int)(osc->phase_increment);
+    // Update result based on sample value
+    osc->result = sample;
     
     // Keep index in range
     if (osc->table_index >= WAVETABLE_SIZE) {
@@ -86,10 +87,7 @@ double oscillator_next(Oscillator* osc) {
         osc->phase_increment -= WAVETABLE_SIZE;
     }
     
-    // Update result based on sample value
-    osc->result = sample > 0.0;
-    
-    return sample;
+
 }
 
 void oscillator_set_frequency(Oscillator* osc, double frequency) {

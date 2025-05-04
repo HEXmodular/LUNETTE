@@ -36,7 +36,10 @@ void oscillator_init_wavetable(Oscillator* osc, const double* waveform, int size
 double oscillator_calculate_phase_increment(Oscillator* osc);
 
 // Generate next sample from oscillator using wavetable
-double oscillator_next(Oscillator* osc);
+void oscillator_calculate(Oscillator* osc);
+
+// Calculate the boolean value from the oscillator
+void oscillator_calculate_bool(volatile Oscillator* osc);
 
 // Get the result of the oscillator
 bool* oscillator_get_result_bool_pointer(Oscillator* osc);

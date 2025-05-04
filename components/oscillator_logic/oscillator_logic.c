@@ -2,7 +2,7 @@
 #include "oscillator.h"
 #include "logical_ops.h"
 #include "output.h"
-
+#include "timer.h"
 #include <esp_log.h>
 
 static const char *TAG = "oscillator_logic";
@@ -28,41 +28,29 @@ Oscillator* oscillator_logic_get_oscillators(void) {
     return oscillators;
 }
 
-// Task function that processes oscillator outputs and applies logical operations
-static void oscillator_logic_task(void* arg) {
-            // Get current values from oscillators
-            double osc1_value = oscillator_next(&oscillators[0]);
-            double osc2_value = oscillator_next(&oscillators[1]);
-            double osc3_value = oscillator_next(&oscillators[2]);
-            double osc4_value = oscillator_next(&oscillators[3]);
+// Timer callback function that processes oscillator outputs and applies logical operations
+void oscillator_logic_next_bool(void)
+{
+    
+    //  ESP_LOGI(TAG, "---Processing oscillator logic---");
+    // Calculate boolean values
+    oscillator_calculate_bool(&oscillators[0]);
+    oscillator_calculate_bool(&oscillators[1]);
+    oscillator_calculate_bool(&oscillators[2]);
+    oscillator_calculate_bool(&oscillators[3]);
 
-            // Convert to boolean values
-            bool osc1_bool = oscillator_output_to_bool(osc1_value);
-            bool osc2_bool = oscillator_output_to_bool(osc2_value);
-            bool osc3_bool = oscillator_output_to_bool(osc3_value);
-            bool osc4_bool = oscillator_output_to_bool(osc4_value);
+    // ESP_LOGI(TAG, "osc1_value: %d", oscillators[0].result_bool);
+    
+    // Calculate operator results
+    logical_ops_calculate(&logical_ops[0]);
+    logical_ops_calculate(&logical_ops[1]);
+    logical_ops_calculate(&logical_ops[2]);
 
-            // Update logical operator inputs
-            logical_ops_set_inputs(&logical_ops[0], &osc1_bool, &osc2_bool);
-            logical_ops_set_inputs(&logical_ops[1], &osc3_bool, &osc4_bool);
-            
-            // Calculate operator results
-            logical_ops_calculate(&logical_ops[0]);
-            logical_ops_calculate(&logical_ops[1]);
-            
-            // Get results and feed to final logical operator
-            bool* result1 = logical_ops_get_result_pointer(&logical_ops[0]);
-            bool* result2 = logical_ops_get_result_pointer(&logical_ops[1]);
-            logical_ops_set_inputs(&logical_ops[2], result1, result2);
-            
-            logical_ops_calculate(&logical_ops[2]);
-
-            bool* result = logical_ops_get_result_pointer(&logical_ops[2]);
-            output_init(4, (int8_t*)result);
+    // ESP_LOGI(TAG, "result1: %d", logical_ops[0].result);
 }
 
 esp_err_t oscillator_logic_init(void) {
-    ESP_LOGI(TAG, "Initializing oscillator logic component");
+    ESP_LOGI(TAG, "---Initializing oscillator logic component---");
 
     // Initialize oscillators
     oscillator_init(&oscillators[0], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);    
@@ -70,22 +58,42 @@ esp_err_t oscillator_logic_init(void) {
     oscillator_init(&oscillators[2], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);
     oscillator_init(&oscillators[3], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);
 
+    bool* osc1_result = oscillator_get_result_bool_pointer(&oscillators[0]);
+    bool* osc2_result = oscillator_get_result_bool_pointer(&oscillators[1]);
+    bool* osc3_result = oscillator_get_result_bool_pointer(&oscillators[2]);
+    bool* osc4_result = oscillator_get_result_bool_pointer(&oscillators[3]);
+
+    ESP_LOGI(TAG, "---Initializing logical operators---");
     // Initialize logical operators
     logical_ops_init(&logical_ops[0]);
     logical_ops_init(&logical_ops[1]);
     logical_ops_init(&logical_ops[2]);
 
+    ESP_LOGI(TAG, "---Configuring logical operations---");
     // Configure logical operations
     logical_ops_set_operation(&logical_ops[0], LOGICAL_OP_AND);
     logical_ops_set_operation(&logical_ops[1], LOGICAL_OP_OR);
     logical_ops_set_operation(&logical_ops[2], LOGICAL_OP_XOR);
 
+    ESP_LOGI(TAG, "---Initializing first logical operator---");
+    // Update logical operator inputs
+    logical_ops_set_inputs(&logical_ops[0], osc1_result, osc2_result);
+    logical_ops_set_inputs(&logical_ops[1], osc3_result, osc4_result);
+
+    ESP_LOGI(TAG, "---Initializing final logical operator---");
+    // Get results and feed to final logical operator
+    bool* result1 = logical_ops_get_result_pointer(&logical_ops[0]);
+    bool* result2 = logical_ops_get_result_pointer(&logical_ops[1]);
+    logical_ops_set_inputs(&logical_ops[2], result1, result2);
+
+    ESP_LOGI(TAG, "---Initializing output---");
     // Create output instance with final logical operator result
     bool* final_result = logical_ops_get_result_pointer(&logical_ops[2]);
     output_init(4, (int8_t*)final_result);
 
-    // Create task for processing
-
+    ESP_LOGI(TAG, "---Initializing timer---");
+    // Initialize shared timer
+    ESP_ERROR_CHECK(timer_init());
 
     return ESP_OK;
 }
