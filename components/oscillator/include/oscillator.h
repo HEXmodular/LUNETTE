@@ -10,7 +10,8 @@ typedef enum {
     OSCILLATOR_TYPE_SINE,
     OSCILLATOR_TYPE_SQUARE,
     OSCILLATOR_TYPE_SAWTOOTH,
-    OSCILLATOR_TYPE_TRIANGLE
+    OSCILLATOR_TYPE_TRIANGLE,
+    OSCILLATOR_TYPE_SQUARE_BOOL,
 } oscillator_type_t;
 
 typedef struct {
@@ -20,6 +21,7 @@ typedef struct {
     double phase_increment;
     double sample_rate;
     double wavetable[WAVETABLE_SIZE];  // Wavetable for synthesis
+    bool wavetable_bool[WAVETABLE_SIZE];  // Wavetable for boolean values
     int table_index;
     oscillator_type_t type;
     bool result_bool;
@@ -57,6 +59,9 @@ void generate_sine_wavetable(double* table, int size);
 
 // Generate a square wave wavetable
 void generate_square_wavetable(double* table, int size);
+
+// Generate a square wave wavetable for boolean values
+void generate_square_wavetable_bool(bool* table, int size);
 
 // Generate a sawtooth wave wavetable
 void generate_sawtooth_wavetable(double* table, int size);

@@ -20,6 +20,7 @@ static const char *TAG = "output";
 typedef struct {
     sdm_channel_handle_t sdm_chan;
     int8_t* value_ptr;
+    bool* value_ptr_bool;
 } output_instance_t;
 
 static output_instance_t* g_output_instance = NULL;
@@ -28,6 +29,14 @@ void output_timer_callback(void)
 {
     if (g_output_instance && g_output_instance->value_ptr) {
         int8_t pdm_value = BOOL_TO_PDM(*(g_output_instance->value_ptr));
+        sdm_channel_set_pulse_density(g_output_instance->sdm_chan, pdm_value);
+    }
+}
+
+void output_timer_callback_bool(void)
+{
+    if (g_output_instance && g_output_instance->value_ptr_bool) {
+        int8_t pdm_value = BOOL_TO_PDM(*(g_output_instance->value_ptr_bool));
         sdm_channel_set_pulse_density(g_output_instance->sdm_chan, pdm_value);
     }
 }
@@ -46,8 +55,7 @@ static sdm_channel_handle_t example_init_sdm(int gpio_num)
     return sdm_chan;
 }
 
-output_handle_t output_init(int gpio_num, int8_t* value_ptr)
-{
+static output_handle_t output_init_common(int gpio_num) {
     if (g_output_instance != NULL) {
         ESP_LOGW(TAG, "Output already initialized");
         return (output_handle_t)g_output_instance;
@@ -59,9 +67,11 @@ output_handle_t output_init(int gpio_num, int8_t* value_ptr)
         return NULL;
     }
 
-    instance->value_ptr = value_ptr;
-    instance->sdm_chan = example_init_sdm(gpio_num);
+    // Initialize pointers to NULL
+    instance->value_ptr = NULL;
+    instance->value_ptr_bool = NULL;
     
+    instance->sdm_chan = example_init_sdm(gpio_num);
     if (!instance->sdm_chan) {
         ESP_LOGE(TAG, "Failed to initialize SDM channel");
         free(instance);
@@ -74,11 +84,39 @@ output_handle_t output_init(int gpio_num, int8_t* value_ptr)
     return (output_handle_t)instance;
 }
 
+output_handle_t output_init_bool(int gpio_num, bool* value_ptr)
+{
+    output_handle_t handle = output_init_common(gpio_num);
+    if (handle) {
+        output_instance_t* instance = (output_instance_t*)handle;
+        instance->value_ptr_bool = value_ptr;
+    }
+    return handle;
+}
+
+output_handle_t output_init(int gpio_num, int8_t* value_ptr)
+{
+    output_handle_t handle = output_init_common(gpio_num);
+    if (handle) {
+        output_instance_t* instance = (output_instance_t*)handle;
+        instance->value_ptr = value_ptr;
+    }
+    return handle;
+}
+
 void output_set_value_ptr(output_handle_t handle, int8_t* value_ptr)
 {
     output_instance_t* instance = (output_instance_t*)handle;
     if (instance) {
         instance->value_ptr = value_ptr;
+    }
+}
+
+void output_set_value_bool(output_handle_t handle, bool* value_ptr_bool)
+{
+    output_instance_t* instance = (output_instance_t*)handle;
+    if (instance) {
+        instance->value_ptr_bool = value_ptr_bool;
     }
 }
 

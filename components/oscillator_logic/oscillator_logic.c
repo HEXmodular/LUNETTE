@@ -13,16 +13,6 @@ static Oscillator oscillators[4];
 // Initialize logical operators
 static logical_ops_t logical_ops[3];
 
-// Function to convert oscillator output to boolean
-static bool oscillator_output_to_bool(double value) {
-    return value > 0;
-}
-
-// Function to convert boolean to oscillator output
-static int8_t bool_to_oscillator_output(bool value) {
-    return value ? 127 : -128;
-}
-
 // Get oscillators array
 Oscillator* oscillator_logic_get_oscillators(void) {
     return oscillators;

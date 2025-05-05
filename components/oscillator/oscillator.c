@@ -6,21 +6,22 @@
 #define DEFAULT_SAMPLE_RATE 100000.0
 
 double oscillator_calculate_phase_increment(Oscillator* osc) {
+    if (!osc || osc->frequency <= 0.0 || osc->sample_rate <= 0.0) return 0.0;
     return (double)WAVETABLE_SIZE * osc->frequency / osc->sample_rate;
 }
 
 void oscillator_init(Oscillator* osc, double frequency, double amplitude, oscillator_type_t type) {
-    if (!osc) return;
+    if (!osc || frequency <= 0.0 || amplitude < 0.0) return;
     
     osc->frequency = frequency;
     osc->amplitude = amplitude;
-    osc->phase_increment = oscillator_calculate_phase_increment(osc);
     osc->phase = 0.0;
     osc->table_index = 0;
     osc->sample_rate = DEFAULT_SAMPLE_RATE;
     osc->type = type;
     osc->result = 0.0;
     osc->result_bool = false;
+    osc->phase_increment = oscillator_calculate_phase_increment(osc);
     
     // Initialize with sine wave by default
     if (type == OSCILLATOR_TYPE_SINE) {
@@ -31,15 +32,25 @@ void oscillator_init(Oscillator* osc, double frequency, double amplitude, oscill
         generate_sawtooth_wavetable(osc->wavetable, WAVETABLE_SIZE);
     } else if (type == OSCILLATOR_TYPE_TRIANGLE) {
         generate_triangle_wavetable(osc->wavetable, WAVETABLE_SIZE);
+    } else if (type == OSCILLATOR_TYPE_SQUARE_BOOL) {
+        generate_square_wavetable_bool(osc->wavetable_bool, WAVETABLE_SIZE);
     }
 }
 
 void oscillator_init_wavetable(Oscillator* osc, const double* waveform, int size) {
-    if (!osc || !waveform) return;
+    if (!osc || !waveform || size <= 0) return;
     
-    if (size > WAVETABLE_SIZE) size = WAVETABLE_SIZE;
+    // Ensure size is within bounds
+    size = (size > WAVETABLE_SIZE) ? WAVETABLE_SIZE : size;
+    
+    // Copy waveform data
     for (int i = 0; i < size; i++) {
         osc->wavetable[i] = waveform[i];
+    }
+    
+    // Zero out remaining elements
+    for (int i = size; i < WAVETABLE_SIZE; i++) {
+        osc->wavetable[i] = 0.0;
     }
 }
 
@@ -56,48 +67,49 @@ double* oscillator_get_result_pointer(Oscillator* osc) {
 void oscillator_calculate_bool(volatile Oscillator* osc) {
     if (!osc) return;
 
-    // Get sample from wavetable
-    bool sample = osc->wavetable[osc->table_index] > 0.0;
-
-    // Update table index based on frequency
-    osc->table_index += (int)(osc->phase_increment);
-    osc->result_bool = sample;
-    
-    // Keep index in range
-    if (osc->table_index >= WAVETABLE_SIZE) {
-        osc->table_index -= WAVETABLE_SIZE;
-        osc->phase_increment -= WAVETABLE_SIZE;
+    // Ensure table_index is within bounds
+    // todo delete this after debugging
+    if (osc->table_index < 0 || osc->table_index >= WAVETABLE_SIZE) {
+        osc->table_index = 0;
+        osc->phase -= 1.0;
     }
+
+    // Get sample from wavetable
+    // todo make bool wavetable
+    bool sample = osc->wavetable_bool[osc->table_index];
+
+    // Update phase and table index
+    osc->phase += osc->phase_increment;
+    osc->table_index = (int)osc->phase % WAVETABLE_SIZE;
+    osc->result_bool = sample;
 }
 
 void oscillator_calculate(Oscillator* osc) {
     if (!osc) return;
     
+    // todo delete this after debugging
+    // Ensure table_index is within bounds
+    if (osc->table_index < 0 || osc->table_index >= WAVETABLE_SIZE) {
+        osc->table_index = 0;
+    }
+    
     // Get sample from wavetable
     double sample = osc->amplitude * osc->wavetable[osc->table_index];
     
-    // Update table index based on frequency
-    osc->table_index += (int)(osc->phase_increment);
-    // Update result based on sample value
+    // Update phase and table index
+    osc->phase += osc->phase_increment;
+    osc->table_index = (int)osc->phase % WAVETABLE_SIZE;
     osc->result = sample;
-    
-    // Keep index in range
-    if (osc->table_index >= WAVETABLE_SIZE) {
-        osc->table_index -= WAVETABLE_SIZE;
-        osc->phase_increment -= WAVETABLE_SIZE;
-    }
-    
-
 }
 
 void oscillator_set_frequency(Oscillator* osc, double frequency) {
-    if (!osc) return;
+    if (!osc || frequency <= 0.0) return;
     osc->frequency = frequency;
     osc->phase_increment = oscillator_calculate_phase_increment(osc);
 }
 
 void oscillator_set_amplitude(Oscillator* osc, double amplitude) {
-    if (!osc) return;
+    if (!osc || amplitude < 0.0) return;
     osc->amplitude = amplitude;
 }
 
@@ -114,6 +126,14 @@ void generate_square_wavetable(double* table, int size) {
     
     for (int i = 0; i < size; i++) {
         table[i] = (i < size/2) ? 1.0 : -1.0;
+    }
+}
+
+void generate_square_wavetable_bool(bool* table, int size) {
+    if (!table) return;
+    
+    for (int i = 0; i < size; i++) {
+        table[i] = (i < size/2) ? true : false;
     }
 }
 
