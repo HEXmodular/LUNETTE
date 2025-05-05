@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define WAVETABLE_SIZE 1024
+#define WAVETABLE_SIZE 256
 
 typedef enum {
     OSCILLATOR_TYPE_SINE,

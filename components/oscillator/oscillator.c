@@ -1,9 +1,9 @@
 #include "oscillator.h"
 #include <math.h>
 #include <stdbool.h>
+#include "common_defs.h"
 
 #define TWO_PI 6.28318530717958647692
-#define DEFAULT_SAMPLE_RATE 100000.0
 
 double oscillator_calculate_phase_increment(Oscillator* osc) {
     if (!osc || osc->frequency <= 0.0 || osc->sample_rate <= 0.0) return 0.0;
@@ -17,7 +17,7 @@ void oscillator_init(Oscillator* osc, double frequency, double amplitude, oscill
     osc->amplitude = amplitude;
     osc->phase = 0.0;
     osc->table_index = 0;
-    osc->sample_rate = DEFAULT_SAMPLE_RATE;
+    osc->sample_rate = SYSTEM_SAMPLE_RATE;
     osc->type = type;
     osc->result = 0.0;
     osc->result_bool = false;

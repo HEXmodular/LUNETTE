@@ -43,11 +43,11 @@ void output_deinit(output_handle_t handle);
  * @brief Timer callback function that updates the PDM output
  * This function is called by the timer system to update the output value
  */
-void output_timer_callback(void);
+void output_timer_callback(void); 
 
 /**
  * @brief Timer callback function that updates the PDM output for boolean values
  * This function is called by the timer system to update the output value
  */
-void output_timer_callback_bool(void); 
+void output_timer_callback_bool(void);
 
