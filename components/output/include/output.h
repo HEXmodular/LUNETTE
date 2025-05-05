@@ -15,6 +15,15 @@ typedef void* output_handle_t;
  */
 output_handle_t output_init(int gpio_num, int8_t* value_ptr);
 
+/** 
+ * @brief Initialize a new output instance for boolean values
+ * 
+ * @param gpio_num GPIO pin number to use for output
+ * @param value_ptr Pointer to the boolean value that will be read for output
+ * @return output_handle_t Handle to the output instance, NULL if initialization failed
+ */
+output_handle_t output_init_bool(int gpio_num, bool* value_ptr);
+
 /**
  * @brief Update the value pointer for an output instance
  * 
@@ -34,5 +43,11 @@ void output_deinit(output_handle_t handle);
  * @brief Timer callback function that updates the PDM output
  * This function is called by the timer system to update the output value
  */
-void output_timer_callback(void); 
+void output_timer_callback(void);
+
+/**
+ * @brief Timer callback function that updates the PDM output for boolean values
+ * This function is called by the timer system to update the output value
+ */
+void output_timer_callback_bool(void); 
 

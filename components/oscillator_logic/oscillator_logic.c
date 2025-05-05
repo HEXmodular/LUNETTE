@@ -43,10 +43,10 @@ esp_err_t oscillator_logic_init(void) {
     ESP_LOGI(TAG, "---Initializing oscillator logic component---");
 
     // Initialize oscillators
-    oscillator_init(&oscillators[0], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);    
-    oscillator_init(&oscillators[1], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);
-    oscillator_init(&oscillators[2], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);
-    oscillator_init(&oscillators[3], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE);
+    oscillator_init(&oscillators[0], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);    
+    oscillator_init(&oscillators[1], 420.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
+    oscillator_init(&oscillators[2], 460.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
+    oscillator_init(&oscillators[3], 220.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
 
     bool* osc1_result = oscillator_get_result_bool_pointer(&oscillators[0]);
     bool* osc2_result = oscillator_get_result_bool_pointer(&oscillators[1]);
@@ -79,7 +79,7 @@ esp_err_t oscillator_logic_init(void) {
     ESP_LOGI(TAG, "---Initializing output---");
     // Create output instance with final logical operator result
     bool* final_result = logical_ops_get_result_pointer(&logical_ops[2]);
-    output_init(4, (int8_t*)final_result);
+    output_init_bool(4, final_result);
 
     ESP_LOGI(TAG, "---Initializing timer---");
     // Initialize shared timer

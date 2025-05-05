@@ -112,7 +112,7 @@ void output_set_value_ptr(output_handle_t handle, int8_t* value_ptr)
     }
 }
 
-void output_set_value_bool(output_handle_t handle, bool* value_ptr_bool)
+void output_set_bool_value_ptr(output_handle_t handle, bool* value_ptr_bool)
 {
     output_instance_t* instance = (output_instance_t*)handle;
     if (instance) {
