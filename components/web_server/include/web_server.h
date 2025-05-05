@@ -3,6 +3,9 @@
 #include <esp_http_server.h>
 #include "esp_err.h"
 
+
+// TODO удалить эту порнографию нафиг
+
 /**
  * @brief Configuration structure for the web server
  */
@@ -53,7 +56,7 @@ typedef struct rest_server_context {
  * @param config Server configuration
  * @return httpd_handle_t Server handle on success, NULL on failure
  */
-httpd_handle_t start_webserver(const web_server_config_t *config);
+httpd_handle_t start_webserver(void);
 
 /**
  * @brief Stop the web server

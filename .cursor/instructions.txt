@@ -1,11 +1,17 @@
 LUNETTE Project Instructions
 
-1. Audio Processing Rules
-- Use double for audio samples
+1. types to awoid
+- do not use float use double
 
 2. Log inclusion Rules
 - use #include <esp_log.h> in .c files
 - use log in PRIV_REQUIRES in CMakeLists file
+
+3. .h include Rules
+- all include files must be in include folder
+
+4. hedaer file creation Rules
+- do no use #ifdef #ifndef
 
 2. Ignore Directories
 - build/
