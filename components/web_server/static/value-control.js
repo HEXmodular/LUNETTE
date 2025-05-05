@@ -343,6 +343,7 @@ class LogicBlockControl {
             : containerSelector;
         if (!this.container) throw new Error('Container not found');
 
+        this.id = options.id;
         this.labels = options.labels || [];
         this.columns = options.columns || 4;
         this.mode = options.mode || 'multiple'; // 'multiple' or 'single'
@@ -380,14 +381,14 @@ class LogicBlockControl {
             this.state = this.state.map((_, idx) => idx === i);
             this.buttons.forEach((b, idx) => b.classList.toggle('active', idx === i));
             if (this.onChange) {
-                this.onChange(i, true);
+                this.onChange(this.id, i, true);
             }
         } else {
             // Множественный выбор
             this.state[i] = !this.state[i];
             btn.classList.toggle('active', this.state[i]);
             if (this.onChange) {
-                this.onChange(i, this.state[i]);
+                this.onChange(this.id, i, this.state[i]);
             }
         }
     }

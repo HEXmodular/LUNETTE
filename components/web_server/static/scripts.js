@@ -30,6 +30,19 @@ function updateOscillator(oscillator_id, value) {
     }
 }
 
+function updateLogicBlock(config) {
+    const { serverId, type,  conection1, conection2} = config;
+    const data = {id: serverId, type, conection1: conection1.conectionId, conection2: conection2.conectionId};
+
+    fetch('/api/logic_block', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+}
+
 //oscillators control blocks
 // Create oscillator controls
 const oscillatorControls = Array(4).fill(null).map((_, i) => {
@@ -42,6 +55,10 @@ const oscillatorControls = Array(4).fill(null).map((_, i) => {
     });
 });
 
+
+const logicBlockTypes = ['AND', 'NAND', 'OR', 'NOR', 'XOR', 'XNOR', 'OFF'];
+const logicConnectionsTypes = ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'];
+
 //logic connection blocks
 // Input connections for oscillators 1-4
 // Configuration for input connections
@@ -50,45 +67,65 @@ const inputConnectionsConfig = [
     ...Array(4).fill(null).map((_, i) => ({
         containerId: `#input-container${i+1}`,
         columns: 2,
+        parentId: [0, 0, 1, 1][i],
+        conectionId: logicConnectionsTypes[i], // ie value of the connection
         defaultState: i
     })),
     // Logic block input connections (5-6) 
     ...Array(2).fill(null).map((_, i) => ({
         containerId: `#input-container${i+5}`,
         columns: 4,
+        parentId: [2, 2][i],
+        conectionId: logicConnectionsTypes[i+4], // ie value of the connection
         defaultState: i+4
     }))
 ];
 
+ // logick_block_id, logic_block_type, input_1, input_2
+// Logic block type selection
+// Logic block controls configuration
+const logicBlocksConfig = Array(3).fill(null).map((_, index) => ({
+    id: `#logic-block-container${index + 1}`,
+    labels: logicBlockTypes,
+    columns: index === 2 ? 4 : 2,
+    serverId: index,
+    type: logicBlockTypes[0],
+    conection1:  inputConnectionsConfig[index*2],
+    conection2:  inputConnectionsConfig[index*2 + 1],
+}));
+
+
 // Create all input connections
-const inputConnections = inputConnectionsConfig.map(config => {
+const inputConnections = inputConnectionsConfig.map((config, index) => {
     const connection = new LogicBlockControl(config.containerId, {
-        labels: ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'],
+        id: index,
+        labels: logicConnectionsTypes,
         columns: config.columns,
         mode: 'single',
-        onChange: (index, active) => {
-            console.log(`Block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
+        onChange: (inputConnectionId, selectedElementIndex, active) => {
+            let {parentId} = inputConnectionsConfig[inputConnectionId];
+            inputConnectionsConfig[inputConnectionId].conectionId = logicConnectionsTypes[selectedElementIndex];
+
+            updateLogicBlock(logicBlocksConfig[parentId]);
         }
     });
     connection.setState(config.defaultState, true);
     return connection;
 });
 
-// Logic block type selection
-// Logic block controls configuration
-const logicBlocksConfig = Array(3).fill(null).map((_, index) => ({
-    id: `#logic-block-container${index + 1}`,
-    labels: ['AND', 'NAND', 'OR', 'NOR', 'XOR', 'XNOR', 'OFF'],
-    columns: index === 2 ? 4 : 2
-}));
 
 // Create logic block controls
 const logicBlockControls = logicBlocksConfig.map((config, index) => {
     const control = new LogicBlockControl(config.id, {
+        id: config.serverId,
         labels: config.labels,
         columns: config.columns,
         mode: 'single',
-        onChange: (blockIndex, active) => {
+        onChange: (id, index, active) => {
+            logicBlocksConfig[id].type = logicBlockTypes[index];
+            // const id = logicBlocksConfig[id].id;
+
+            updateLogicBlock(logicBlocksConfig[id]);
             console.log(`Logic block ${blockIndex + 1} is now ${active ? 'active' : 'inactive'}`);
         }
     });
