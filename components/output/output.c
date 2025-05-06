@@ -1,3 +1,4 @@
+#include <string.h>
 #include "output.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -21,6 +22,10 @@ typedef struct {
     sdm_channel_handle_t sdm_chan;
     int8_t* value_ptr;
     bool* value_ptr_bool;
+    // Sample collection
+    int8_t sample_buffer[OUTPUT_SAMPLE_BUFFER_SIZE];
+    size_t sample_count;
+    bool buffer_ready;
 } output_instance_t;
 
 static output_instance_t* g_output_instance = NULL;
@@ -30,6 +35,14 @@ void output_timer_callback(void)
     if (g_output_instance && g_output_instance->value_ptr) {
         int8_t pdm_value = BOOL_TO_PDM(*(g_output_instance->value_ptr));
         sdm_channel_set_pulse_density(g_output_instance->sdm_chan, pdm_value);
+        
+        // Store sample if buffer not full
+        if (g_output_instance->sample_count < OUTPUT_SAMPLE_BUFFER_SIZE) {
+            g_output_instance->sample_buffer[g_output_instance->sample_count++] = pdm_value;
+            if (g_output_instance->sample_count >= OUTPUT_SAMPLE_BUFFER_SIZE) {
+                g_output_instance->buffer_ready = true;
+            }
+        }
     }
 }
 
@@ -38,6 +51,14 @@ void output_timer_callback_bool(void)
     if (g_output_instance && g_output_instance->value_ptr_bool) {
         int8_t pdm_value = BOOL_TO_PDM(*(g_output_instance->value_ptr_bool));
         sdm_channel_set_pulse_density(g_output_instance->sdm_chan, pdm_value);
+        
+        // Store sample if buffer not full
+        if (g_output_instance->sample_count < OUTPUT_SAMPLE_BUFFER_SIZE) {
+            g_output_instance->sample_buffer[g_output_instance->sample_count++] = pdm_value;
+            if (g_output_instance->sample_count >= OUTPUT_SAMPLE_BUFFER_SIZE) {
+                g_output_instance->buffer_ready = true;
+            }
+        }
     }
 }
 
@@ -70,6 +91,8 @@ static output_handle_t output_init_common(int gpio_num) {
     // Initialize pointers to NULL
     instance->value_ptr = NULL;
     instance->value_ptr_bool = NULL;
+    instance->sample_count = 0;
+    instance->buffer_ready = false;
     
     instance->sdm_chan = example_init_sdm(gpio_num);
     if (!instance->sdm_chan) {
@@ -131,4 +154,36 @@ void output_deinit(output_handle_t handle)
         free(instance);
         g_output_instance = NULL;
     }
+}
+
+esp_err_t output_get_samples(output_handle_t handle, int8_t* buffer, size_t size)
+{
+    output_instance_t* instance = (output_instance_t*)handle;
+    if (!instance || !buffer || size < OUTPUT_SAMPLE_BUFFER_SIZE) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!instance->buffer_ready) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    // Copy samples to provided buffer
+    memcpy(buffer, instance->sample_buffer, OUTPUT_SAMPLE_BUFFER_SIZE);
+    
+    // Reset buffer state
+    instance->sample_count = 0;
+    instance->buffer_ready = false;
+
+    return ESP_OK;
+}
+
+bool output_samples_ready(output_handle_t handle)
+{
+    output_instance_t* instance = (output_instance_t*)handle;
+    return instance && instance->buffer_ready;
+}
+
+output_handle_t output_get_instance(void)
+{
+    return (output_handle_t)g_output_instance;
 } 
