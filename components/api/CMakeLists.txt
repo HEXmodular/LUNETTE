@@ -1,0 +1,18 @@
+idf_component_register(
+    SRCS 
+        "api_utils.c"
+        "api_registry.c"
+        "handlers/oscillator_handler.c"
+        "handlers/logical_ops_handler.c"
+    INCLUDE_DIRS 
+        "include"
+        "handlers/include"
+    REQUIRES 
+        esp_http_server
+        json
+        oscillator_logic
+        common_defs
+        logical_ops
+    PRIV_REQUIRES 
+        log
+)
