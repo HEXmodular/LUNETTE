@@ -1,3 +1,36 @@
+// Initialize audio player
+const audioPlayer = new AudioStreamPlayer();
+
+// Audio control elements
+const startButton = document.getElementById('startAudio');
+const stopButton = document.getElementById('stopAudio');
+const volumeSlider = document.getElementById('volume');
+const volumeValue = document.getElementById('volumeValue');
+
+// Audio control event listeners
+startButton.addEventListener('click', async () => {
+    const started = await audioPlayer.start();
+    if (started) {
+        startButton.disabled = true;
+        stopButton.disabled = false;
+    }
+});
+
+stopButton.addEventListener('click', () => {
+    audioPlayer.stop();
+    startButton.disabled = false;
+    stopButton.disabled = true;
+});
+
+volumeSlider.addEventListener('input', (e) => {
+    const value = e.target.value;
+    audioPlayer.setVolume(value / 100);
+    volumeValue.textContent = `${value}%`;
+});
+
+// Initialize stop button as disabled
+stopButton.disabled = true;
+
 function updateOscillator(oscillator_id, value) {
     // Only send if debounce timer expired
     if (!updateOscillator.debounceTimer) {
@@ -126,7 +159,7 @@ const logicBlockControls = logicBlocksConfig.map((config, index) => {
             // const id = logicBlocksConfig[id].id;
 
             updateLogicBlock(logicBlocksConfig[id]);
-            console.log(`Logic block ${blockIndex + 1} is now ${active ? 'active' : 'inactive'}`);
+            console.log(`Logic block ${index + 1} is now ${active ? 'active' : 'inactive'}`);
         }
     });
     
