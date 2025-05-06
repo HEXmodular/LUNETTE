@@ -1,6 +1,7 @@
 #include "web_server.h"
 #include "api_registry.h"
 #include "oscillator_handler.h"
+#include "output.h"
 
 #include <string.h>
 #include "esp_log.h"
@@ -28,26 +29,43 @@ static esp_err_t ws_handler(httpd_req_t *req)
         return ESP_OK;
     }
 
-    uint8_t buf[128] = { 0 };
+    // Get output instance to access samples
+    output_handle_t output = output_get_instance();
+    if (!output) {
+        ESP_LOGE(TAG, "Output instance not found");
+        return ESP_FAIL;
+    }
+
+    // Check if samples are ready
+    if (!output_samples_ready(output)) {
+        // If no samples ready, send empty frame
+        httpd_ws_frame_t ws_pkt;
+        memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+        ws_pkt.type = HTTPD_WS_TYPE_BINARY;
+        ws_pkt.len = 0;
+        return httpd_ws_send_frame(req, &ws_pkt);
+    }
+
+    // Get samples from output buffer
+    int8_t samples[OUTPUT_SAMPLE_BUFFER_SIZE];
+    esp_err_t err = output_get_samples(output, samples, OUTPUT_SAMPLE_BUFFER_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get samples: %d", err);
+        return err;
+    }
+
+    // Send samples as binary WebSocket frame
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.payload = buf;
+    ws_pkt.type = HTTPD_WS_TYPE_BINARY;
+    ws_pkt.payload = (uint8_t*)samples;
+    ws_pkt.len = OUTPUT_SAMPLE_BUFFER_SIZE;
 
-    // First receive the full ws message
-    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, sizeof(buf));
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
-        return ret;
+    err = httpd_ws_send_frame(req, &ws_pkt);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send WebSocket frame: %d", err);
     }
-
-    ESP_LOGI(TAG, "Got packet with message: %.*s", ws_pkt.len, ws_pkt.payload);
-
-    // Send back the same message
-    ret = httpd_ws_send_frame(req, &ws_pkt);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
-    }
-    return ret;
+    return err;
 }
 
 // Function to send WebSocket message to a specific client
@@ -79,6 +97,10 @@ static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
     extern const unsigned char scripts_js_end[]    asm("_binary_scripts_js_end");
     extern const unsigned char value_control_js_start[]  asm("_binary_value_control_js_start");
     extern const unsigned char value_control_js_end[]    asm("_binary_value_control_js_end");
+    extern const unsigned char audio_worklet_js_start[]  asm("_binary_audio_worklet_js_start");
+    extern const unsigned char audio_worklet_js_end[]    asm("_binary_audio_worklet_js_end");
+    extern const unsigned char audio_stream_js_start[]  asm("_binary_audio_stream_js_start");
+    extern const unsigned char audio_stream_js_end[]    asm("_binary_audio_stream_js_end");
     extern const unsigned char style_css_start[]  asm("_binary_style_css_start");
     extern const unsigned char style_css_end[]    asm("_binary_style_css_end");
     extern const unsigned char value_control_css_start[]  asm("_binary_value_control_css_start");
@@ -105,6 +127,14 @@ static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
         start = style_css_start;
         end = style_css_end;
         httpd_resp_set_type(req, "text/css");
+    } else if (strcmp(file_path, "audio-worklet.js") == 0) {
+        start = audio_worklet_js_start;
+        end = audio_worklet_js_end;
+        httpd_resp_set_type(req, "application/javascript");
+    } else if (strcmp(file_path, "audio-stream.js") == 0) {
+        start = audio_stream_js_start;
+        end = audio_stream_js_end;
+        httpd_resp_set_type(req, "application/javascript");
     } else if (strcmp(file_path, "value-control.css") == 0) {
         start = value_control_css_start;
         end = value_control_css_end;

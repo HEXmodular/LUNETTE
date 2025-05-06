@@ -31,15 +31,70 @@
 // // Initialize stop button as disabled
 // stopButton.disabled = true;
 
+// Initialize WebSocket connection
 const ws = new WebSocket('/ws');
+// const ws = {};
+const audioContext = new AudioContext();
+let audioWorkletNode = null;
+
+// Create start audio button
+const startAudioButton = document.createElement('button');
+startAudioButton.textContent = 'Start Audio';
+startAudioButton.id = 'startAudioButton';
+document.body.insertBefore(startAudioButton, document.body.firstChild);
+
+// setupAudioWorklet();
+
+// Initialize Web Audio API
+async function initAudio() {
+    try {
+            console.log('initAudio', audioContext);
+            // Load and register our audio worklet
+            
+            await audioContext.audioWorklet.addModule('/audio-worklet.js');
+            console.log('AudioWorklet module loaded.');
+            
+            // Create audio worklet node
+            audioWorkletNode = new AudioWorkletNode(audioContext, 'audio-processor');
+            audioWorkletNode.connect(audioContext.destination);
+            
+            // Hide the start button once audio is initialized
+            startAudioButton.style.display = 'none';
+        
+    } catch (error) {
+        console.error('Failed to initialize audio:', error);
+    }
+}
+
+// Add click handler for the start button
+startAudioButton.addEventListener('click', initAudio);
 
 ws.onopen = () => {
     console.log('Connected to WebSocket server');
-    ws.send('Hello from client!');
 };
 
-ws.onmessage = (event) => {
-    console.log('Received:', event.data);
+ws.onmessage = async (event) => {
+    // if (!audioContext || !audioWorkletNode) {
+    //     await initAudio();
+    // }
+    
+    if (event.data instanceof Blob) {
+        // Convert blob to array buffer
+        const arrayBuffer = await event.data.arrayBuffer();
+        const int8Array = new Int8Array(arrayBuffer);
+        
+        // Convert int8 samples (-128 to 127) to float32 (-1.0 to 1.0)
+        const float32Array = new Float32Array(int8Array.length);
+        for (let i = 0; i < int8Array.length; i++) {
+            float32Array[i] = int8Array[i] / 128.0;
+        }
+        
+        // Send audio data to the worklet
+        audioWorkletNode.port.postMessage({
+            audioData: float32Array,
+            sampleRate: 10000 // ESP32 sample rate
+        });
+    }
 };
 
 ws.onclose = () => {
