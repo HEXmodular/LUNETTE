@@ -18,6 +18,11 @@ Oscillator* oscillator_logic_get_oscillators(void) {
     return oscillators;
 }
 
+// Get logical operations array
+logical_ops_t* oscillator_logic_get_logical_ops(void) {
+    return logical_ops;
+}
+
 // Timer callback function that processes oscillator outputs and applies logical operations
 void oscillator_logic_next_bool(void)
 {

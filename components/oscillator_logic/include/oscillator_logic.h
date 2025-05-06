@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "oscillator.h"
+#include "logical_ops.h"
 
 
 /**
@@ -34,6 +35,13 @@ esp_err_t oscillator_logic_get_enabled(bool *enabled);
  * @return Oscillator* Pointer to the oscillators array
  */
 Oscillator* oscillator_logic_get_oscillators(void); 
+
+/**
+ * @brief Get the logical operations array
+ * 
+ * @return logical_ops_t* Pointer to the logical operations array
+ */
+logical_ops_t* oscillator_logic_get_logical_ops(void);
 
 /**
  * @brief Process the next boolean values from all oscillators and apply logical operations

@@ -32,9 +32,9 @@ function updateOscillator(oscillator_id, value) {
 
 function updateLogicBlock(config) {
     const { serverId, type,  conection1, conection2} = config;
-    const data = {id: serverId, type, conection1: conection1.conectionId, conection2: conection2.conectionId};
+    const data = {logic_block_id: serverId, operation_type: type, conection1: conection1.conectionId, conection2: conection2.conectionId};
 
-    fetch('/api/logic_block', {
+    fetch('/api/logical-ops', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

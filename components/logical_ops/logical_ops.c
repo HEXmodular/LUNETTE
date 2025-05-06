@@ -26,7 +26,30 @@ esp_err_t logical_ops_set_operation(logical_ops_t* ops, logical_op_t op)
     }
     
     ops->operation = op;
-    ESP_LOGI(TAG, "Operation set to %d", op);
+    const char* op_name;
+    switch (op) {
+        case LOGICAL_OP_AND:
+            op_name = "AND";
+            break;
+        case LOGICAL_OP_OR:
+            op_name = "OR"; 
+            break;
+        case LOGICAL_OP_XOR:
+            op_name = "XOR";
+            break;
+        case LOGICAL_OP_NAND:
+            op_name = "NAND";
+            break;
+        case LOGICAL_OP_NOR:
+            op_name = "NOR";
+            break;
+        case LOGICAL_OP_XNOR:
+            op_name = "XNOR";
+            break;
+        default:
+            op_name = "UNKNOWN";
+    }
+    ESP_LOGI(TAG, "Operation set to %s", op_name);
     return ESP_OK;
 }
 
