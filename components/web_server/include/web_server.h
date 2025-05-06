@@ -80,3 +80,13 @@ esp_err_t web_server_init(void);
  */
 esp_err_t web_server_deinit(void);
 
+/**
+ * @brief Send a WebSocket message to a specific client
+ * 
+ * @param server Server handle
+ * @param client_fd Client file descriptor
+ * @param message Message to send
+ * @return esp_err_t ESP_OK on success, error code otherwise
+ */
+esp_err_t send_ws_message(httpd_handle_t server, int client_fd, const char *message);
+

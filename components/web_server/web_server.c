@@ -10,6 +10,64 @@
 static const char *TAG = "web_server";
 static httpd_handle_t server = NULL;
 
+// WebSocket frame receive buffer
+#define WS_BUFFER_SIZE 1024
+static uint8_t ws_buffer[WS_BUFFER_SIZE];
+
+// WebSocket handler
+static esp_err_t ws_handler(httpd_req_t *req)
+{
+    ESP_LOGI(TAG, "WebSocket handler called");
+    if (req->method == HTTP_GET) {
+        // Upgrade connection to WebSocket
+        httpd_ws_frame_t ws_pkt;
+        memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+        ws_pkt.type = HTTPD_WS_TYPE_TEXT;
+        
+        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+        return ESP_OK;
+    }
+
+    uint8_t buf[128] = { 0 };
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.payload = buf;
+
+    // First receive the full ws message
+    esp_err_t ret = httpd_ws_recv_frame(req, &ws_pkt, sizeof(buf));
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "httpd_ws_recv_frame failed with %d", ret);
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "Got packet with message: %.*s", ws_pkt.len, ws_pkt.payload);
+
+    // Send back the same message
+    ret = httpd_ws_send_frame(req, &ws_pkt);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
+    }
+    return ret;
+}
+
+// Function to send WebSocket message to a specific client
+esp_err_t send_ws_message(httpd_handle_t server, int client_fd, const char *message)
+{
+    if (server == NULL || client_fd < 0 || message == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    httpd_ws_frame_t ws_pkt = {
+        .final = true,
+        .fragmented = false,
+        .type = HTTPD_WS_TYPE_TEXT,
+        .payload = (uint8_t*)message,
+        .len = strlen(message)
+    };
+
+    return httpd_ws_send_frame_async(server, client_fd, &ws_pkt);
+}
+
 // Helper function to send file content
 static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
 {
@@ -134,7 +192,7 @@ static esp_err_t static_handler(httpd_req_t *req)
 // URI matching function with logging
 static bool uri_match_fn(const char *reference_uri, const char *uri_to_match, size_t match_upto)
 {
-    ESP_LOGD(TAG, "Matching URI - Reference: %s, To Match: %s, Match Length: %zu", 
+    ESP_LOGI(TAG, "Matching URI - Reference: %s, To Match: %s, Match Length: %zu", 
              reference_uri, uri_to_match, match_upto);
     
     // Handle wildcard pattern
@@ -169,6 +227,7 @@ httpd_handle_t start_webserver(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.lru_purge_enable = true;
     config.uri_match_fn = uri_match_fn;  // Set our custom URI matching function
+    config.max_open_sockets = 4;  // Allow multiple WebSocket connections
 
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
     
@@ -178,7 +237,7 @@ httpd_handle_t start_webserver(void)
         return NULL;
     }
 
-    //URI handler for root path
+    // URI handler for root path
     httpd_uri_t root_uri = {
         .uri       = "/",
         .method    = HTTP_GET,
@@ -186,6 +245,16 @@ httpd_handle_t start_webserver(void)
         .user_ctx  = NULL
     };
     httpd_register_uri_handler(server, &root_uri);
+
+    // URI handler for WebSocket endpoint
+    httpd_uri_t ws_uri = {
+        .uri        = "/ws",
+        .method     = HTTP_GET,
+        .handler    = ws_handler,
+        .is_websocket = true, 
+        .user_ctx   = NULL,
+    };
+    httpd_register_uri_handler(server, &ws_uri);
 
     // Initialize API registry
     err = api_registry_init(server);

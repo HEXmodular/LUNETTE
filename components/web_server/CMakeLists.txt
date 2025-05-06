@@ -14,6 +14,7 @@ idf_component_register(
         "api"
         "common_defs"
         "esp_http_client"
+        "esp_websocket_client"
     EMBED_FILES 
         "static/index.html" 
         "static/scripts.js" 

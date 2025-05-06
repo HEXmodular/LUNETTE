@@ -1,35 +1,50 @@
 // Initialize audio player
-const audioPlayer = new AudioStreamPlayer();
+// const audioPlayer = new AudioStreamPlayer();
 
-// Audio control elements
-const startButton = document.getElementById('startAudio');
-const stopButton = document.getElementById('stopAudio');
-const volumeSlider = document.getElementById('volume');
-const volumeValue = document.getElementById('volumeValue');
+// // Audio control elements
+// const startButton = document.getElementById('startAudio');
+// const stopButton = document.getElementById('stopAudio');
+// const volumeSlider = document.getElementById('volume');
+// const volumeValue = document.getElementById('volumeValue');
 
-// Audio control event listeners
-startButton.addEventListener('click', async () => {
-    const started = await audioPlayer.start();
-    if (started) {
-        startButton.disabled = true;
-        stopButton.disabled = false;
-    }
-});
+// // Audio control event listeners
+// startButton.addEventListener('click', async () => {
+//     const started = await audioPlayer.start();
+//     if (started) {
+//         startButton.disabled = true;
+//         stopButton.disabled = false;
+//     }
+// });
 
-stopButton.addEventListener('click', () => {
-    audioPlayer.stop();
-    startButton.disabled = false;
-    stopButton.disabled = true;
-});
+// stopButton.addEventListener('click', () => {
+//     audioPlayer.stop();
+//     startButton.disabled = false;
+//     stopButton.disabled = true;
+// });
 
-volumeSlider.addEventListener('input', (e) => {
-    const value = e.target.value;
-    audioPlayer.setVolume(value / 100);
-    volumeValue.textContent = `${value}%`;
-});
+// volumeSlider.addEventListener('input', (e) => {
+//     const value = e.target.value;
+//     audioPlayer.setVolume(value / 100);
+//     volumeValue.textContent = `${value}%`;
+// });
 
-// Initialize stop button as disabled
-stopButton.disabled = true;
+// // Initialize stop button as disabled
+// stopButton.disabled = true;
+
+const ws = new WebSocket('/ws');
+
+ws.onopen = () => {
+    console.log('Connected to WebSocket server');
+    ws.send('Hello from client!');
+};
+
+ws.onmessage = (event) => {
+    console.log('Received:', event.data);
+};
+
+ws.onclose = () => {
+    console.log('Disconnected from WebSocket server');
+};
 
 function updateOscillator(oscillator_id, value) {
     // Only send if debounce timer expired
