@@ -85,4 +85,11 @@ esp_err_t output_get_samples(output_handle_t handle, int8_t* buffer, size_t size
  */
 bool output_samples_ready(output_handle_t handle);
 
+/**
+ * @brief Register a callback function to be called when a buffer is ready
+ * 
+ * @param callback Callback function to register
+ */
+void output_register_buffer_ready_callback(void (*callback)(void));
+
 //

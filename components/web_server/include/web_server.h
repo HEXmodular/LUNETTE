@@ -25,24 +25,6 @@ typedef struct {
     uint16_t send_wait_timeout;       /*!< Timeout for sending data */
 } web_server_config_t;
 
-/**
- * @brief Default configuration for the web server
- */
-#define WEB_SERVER_DEFAULT_CONFIG() { \
-    .port = 80, \
-    .max_uri_handlers = 8, \
-    .max_resp_headers = 8, \
-    .max_req_headers_len = 512, \
-    .max_uri_len = 512, \
-    .max_post_len = 1024, \
-    .max_out_headers = 8, \
-    .max_sess_ctx = 8, \
-    .max_open_sockets = 7, \
-    .backlog_conn = 5, \
-    .lru_purge_enable = true, \
-    .recv_wait_timeout = 5, \
-    .send_wait_timeout = 5 \
-}
 
 #define SCRATCH_BUFSIZE (10240)
 
@@ -80,13 +62,4 @@ esp_err_t web_server_init(void);
  */
 esp_err_t web_server_deinit(void);
 
-/**
- * @brief Send a WebSocket message to a specific client
- * 
- * @param server Server handle
- * @param client_fd Client file descriptor
- * @param message Message to send
- * @return esp_err_t ESP_OK on success, error code otherwise
- */
-esp_err_t send_ws_message(httpd_handle_t server, int client_fd, const char *message);
 

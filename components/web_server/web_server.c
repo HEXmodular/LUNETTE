@@ -10,10 +10,57 @@
 
 static const char *TAG = "web_server";
 static httpd_handle_t server = NULL;
+// static httpd_req_t *ws_req = NULL;
+static httpd_handle_t ws_req_hd = NULL;
+static int ws_req_fd = 0;
 
 // WebSocket frame receive buffer
-#define WS_BUFFER_SIZE 1024
-static uint8_t ws_buffer[WS_BUFFER_SIZE];
+// #define WS_BUFFER_SIZE 1024
+// static uint8_t ws_buffer[WS_BUFFER_SIZE];
+
+static output_handle_t output = NULL;
+
+// execute_buffer_ready_callback
+
+static void send_samples_to_client()
+{
+    // ESP_LOGI(TAG, "Sending samples to client");
+
+    if (!output) {
+        ESP_LOGE(TAG, "Output instance not found");
+        // return ESP_FAIL;
+    }   
+
+    // Check if samples are ready
+    if (!output_samples_ready(output)) {
+        ESP_LOGE(TAG, "Samples are not ready");
+        // return ESP_FAIL;
+    }   
+
+    // Get samples from output buffer
+    int8_t samples[OUTPUT_SAMPLE_BUFFER_SIZE];
+    esp_err_t err = output_get_samples(output, samples, OUTPUT_SAMPLE_BUFFER_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get samples: %d", err);
+        // return err;
+    }  
+
+    // ESP_LOGI(TAG, "Samples successfully got: %d", samples[0]);
+
+    // Send samples as binary WebSocket frame
+    httpd_ws_frame_t ws_pkt;
+    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
+    ws_pkt.type = HTTPD_WS_TYPE_BINARY;
+    ws_pkt.payload = (uint8_t*)samples; 
+    ws_pkt.len = OUTPUT_SAMPLE_BUFFER_SIZE;
+    ws_pkt.final = true;
+
+    // Send WebSocket frame
+    err = httpd_ws_send_frame_async(ws_req_hd, ws_req_fd, &ws_pkt);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send WebSocket frame: %d", err);   
+    }
+}
 
 // WebSocket handler
 static esp_err_t ws_handler(httpd_req_t *req)
@@ -24,67 +71,29 @@ static esp_err_t ws_handler(httpd_req_t *req)
         httpd_ws_frame_t ws_pkt;
         memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
         ws_pkt.type = HTTPD_WS_TYPE_TEXT;
-        
+
+        ws_req_hd = req->handle;
+        ws_req_fd = httpd_req_to_sockfd(req);
+
+        // ESP_LOGI(TAG, "WebSocket request handle: %d", ws_req_handle);
         ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+
+        // Get output instance from output component
+        output = output_get_instance();
+        ESP_LOGI(TAG, "Output instance successfully got");
+
+        // Register callback to send samples to web socket client
+        output_register_buffer_ready_callback(&send_samples_to_client);
+        ESP_LOGI(TAG, "Buffer ready callback registered");
+        
         return ESP_OK;
     }
 
-    // Get output instance to access samples
-    output_handle_t output = output_get_instance();
-    if (!output) {
-        ESP_LOGE(TAG, "Output instance not found");
-        return ESP_FAIL;
-    }
+    ESP_LOGI(TAG, "WebSocket request handle: %d", (int)req->handle);
 
-    // Check if samples are ready
-    if (!output_samples_ready(output)) {
-        // If no samples ready, send empty frame
-        httpd_ws_frame_t ws_pkt;
-        memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-        ws_pkt.type = HTTPD_WS_TYPE_BINARY;
-        ws_pkt.len = 0;
-        return httpd_ws_send_frame(req, &ws_pkt);
-    }
-
-    // Get samples from output buffer
-    int8_t samples[OUTPUT_SAMPLE_BUFFER_SIZE];
-    esp_err_t err = output_get_samples(output, samples, OUTPUT_SAMPLE_BUFFER_SIZE);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get samples: %d", err);
-        return err;
-    }
-
-    // Send samples as binary WebSocket frame
-    httpd_ws_frame_t ws_pkt;
-    memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
-    ws_pkt.type = HTTPD_WS_TYPE_BINARY;
-    ws_pkt.payload = (uint8_t*)samples;
-    ws_pkt.len = OUTPUT_SAMPLE_BUFFER_SIZE;
-
-    err = httpd_ws_send_frame(req, &ws_pkt);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send WebSocket frame: %d", err);
-    }
-    return err;
+    return ESP_OK;
 }
 
-// Function to send WebSocket message to a specific client
-esp_err_t send_ws_message(httpd_handle_t server, int client_fd, const char *message)
-{
-    if (server == NULL || client_fd < 0 || message == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    httpd_ws_frame_t ws_pkt = {
-        .final = true,
-        .fragmented = false,
-        .type = HTTPD_WS_TYPE_TEXT,
-        .payload = (uint8_t*)message,
-        .len = strlen(message)
-    };
-
-    return httpd_ws_send_frame_async(server, client_fd, &ws_pkt);
-}
 
 // Helper function to send file content
 static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
@@ -222,9 +231,6 @@ static esp_err_t static_handler(httpd_req_t *req)
 // URI matching function with logging
 static bool uri_match_fn(const char *reference_uri, const char *uri_to_match, size_t match_upto)
 {
-    ESP_LOGI(TAG, "Matching URI - Reference: %s, To Match: %s, Match Length: %zu", 
-             reference_uri, uri_to_match, match_upto);
-    
     // Handle wildcard pattern
     const char *wildcard = strchr(reference_uri, '*');
     if (wildcard != NULL) {

@@ -30,6 +30,23 @@ typedef struct {
 
 static output_instance_t* g_output_instance = NULL;
 
+// Callback function pointer
+static void (*buffer_ready_callback)(void) = NULL;
+
+// Function to register buffer ready callback
+void output_register_buffer_ready_callback(void (*callback)(void)) {
+    ESP_LOGI(TAG, "Registering buffer ready callback");
+    buffer_ready_callback = callback;
+}
+
+// Function to execute callback when buffer is ready
+static void execute_buffer_ready_callback(void) {
+    if (buffer_ready_callback != NULL) {
+        buffer_ready_callback();
+    }
+}
+
+
 void output_timer_callback(void)
 {
     if (g_output_instance && g_output_instance->value_ptr) {
@@ -41,6 +58,8 @@ void output_timer_callback(void)
             g_output_instance->sample_buffer[g_output_instance->sample_count++] = pdm_value;
             if (g_output_instance->sample_count >= OUTPUT_SAMPLE_BUFFER_SIZE) {
                 g_output_instance->buffer_ready = true;
+                g_output_instance->sample_count = 0;
+                execute_buffer_ready_callback();
             }
         }
     }
@@ -57,6 +76,8 @@ void output_timer_callback_bool(void)
             g_output_instance->sample_buffer[g_output_instance->sample_count++] = pdm_value;
             if (g_output_instance->sample_count >= OUTPUT_SAMPLE_BUFFER_SIZE) {
                 g_output_instance->buffer_ready = true;
+                g_output_instance->sample_count = 0;
+                execute_buffer_ready_callback();
             }
         }
     }

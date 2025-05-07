@@ -90,10 +90,12 @@ ws.onmessage = async (event) => {
         }
         
         // Send audio data to the worklet
+        if (audioWorkletNode) {
         audioWorkletNode.port.postMessage({
             audioData: float32Array,
-            sampleRate: 10000 // ESP32 sample rate
-        });
+                sampleRate: 10000 // ESP32 sample rate
+            });
+        }
     }
 };
 

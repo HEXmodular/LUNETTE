@@ -22,9 +22,8 @@ void app_main(void)
         ESP_LOGI(TAG, "Web server started successfully");
     }
 
-        // Initialize oscillator logic
+//  TODO: fix dependency, all this stuff shod be independent from web server
+            // Initialize oscillator logic
    ESP_ERROR_CHECK(oscillator_logic_init());
 
-   //     // Initialize shared timer
-   //  ESP_ERROR_CHECK(timer_init());
 }
