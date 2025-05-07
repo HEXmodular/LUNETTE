@@ -36,6 +36,8 @@ const ws = new WebSocket('/ws');
 // const ws = {};
 const audioContext = new AudioContext();
 let audioWorkletNode = null;
+let convolverNode = null;
+let reverbGainNode = null;
 
 // Create start audio button
 const startAudioButton = document.createElement('button');
@@ -43,23 +45,91 @@ startAudioButton.textContent = 'Start Audio';
 startAudioButton.id = 'startAudioButton';
 document.body.insertBefore(startAudioButton, document.body.firstChild);
 
-// setupAudioWorklet();
+// Create reverb controls
+const reverbControls = document.createElement('div');
+reverbControls.style.position = 'fixed';
+reverbControls.style.top = '10px';
+reverbControls.style.right = '10px';
+reverbControls.style.background = 'rgba(0, 0, 0, 0.8)';
+reverbControls.style.padding = '10px';
+reverbControls.style.borderRadius = '5px';
+reverbControls.style.color = 'white';
+
+const reverbLabel = document.createElement('label');
+reverbLabel.textContent = 'Reverb Mix: ';
+reverbControls.appendChild(reverbLabel);
+
+const reverbSlider = document.createElement('input');
+reverbSlider.type = 'range';
+reverbSlider.min = '0';
+reverbSlider.max = '100';
+reverbSlider.value = '30';
+reverbSlider.style.width = '100px';
+reverbControls.appendChild(reverbSlider);
+
+document.body.appendChild(reverbControls);
 
 // Initialize Web Audio API
 async function initAudio() {
     try {
-            console.log('initAudio', audioContext);
-            // Load and register our audio worklet
-            
-            await audioContext.audioWorklet.addModule('/audio-worklet.js');
-            console.log('AudioWorklet module loaded.');
-            
-            // Create audio worklet node
-            audioWorkletNode = new AudioWorkletNode(audioContext, 'audio-processor');
-            audioWorkletNode.connect(audioContext.destination);
-            
-            // Hide the start button once audio is initialized
-            startAudioButton.style.display = 'none';
+        console.log('initAudio', audioContext);
+        // Load and register our audio worklet
+        await audioContext.audioWorklet.addModule('/audio-worklet.js');
+        console.log('AudioWorklet module loaded.');
+        
+        // Create audio worklet node
+        const audioWebSocketWorkletNode = new AudioWorkletNode(audioContext, 'audio-processor');
+        const reverbNode = new ReverbWorklet(audioContext);
+        // await reverbNode.init();
+
+        // Adjust parameters
+        reverb.setParameters({
+            delayTime1: 0.15,
+            delayTime2: 0.2,
+            allpassFreq1: 800,
+            allpassFreq2: 1600,
+            allpassFreq3: 2400,
+            allpassFreq4: 3200,
+            lowpassFreq: 1800,
+            feedbackGain: 0.6
+        });
+
+        // Create reverb nodes
+        convolverNode = audioContext.createConvolver();
+        reverbGainNode = audioContext.createGain();
+        
+        // Generate impulse response for reverb
+        const sampleRate = audioContext.sampleRate;
+        const length = sampleRate * 2; // 2 seconds of reverb
+        const impulse = audioContext.createBuffer(2, length, sampleRate);
+        
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = impulse.getChannelData(channel);
+            for (let i = 0; i < length; i++) {
+                channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+            }
+        }
+        
+        convolverNode.buffer = impulse;
+        reverbGainNode.gain.value = 0.3; // Initial reverb mix
+        
+        // Connect nodes
+        // audioWebSocketWorkletNode.connect(convolverNode);
+        // convolverNode.connect(reverbGainNode);
+        // reverbGainNode.connect(audioContext.destination);
+        reverbNode.connect(audioContext.destination);
+        audioWebSocketWorkletNode.connect(reverbNode);
+        reverbNode.connect(audioContext.destination);
+
+        
+        // Add reverb mix control
+        reverbSlider.addEventListener('input', (e) => {
+            const mix = e.target.value / 100;
+            reverbGainNode.gain.value = mix;
+        });
+        
+        // Hide the start button once audio is initialized
+        startAudioButton.style.display = 'none';
         
     } catch (error) {
         console.error('Failed to initialize audio:', error);

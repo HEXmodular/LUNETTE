@@ -108,8 +108,8 @@ static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
     extern const unsigned char value_control_js_end[]    asm("_binary_value_control_js_end");
     extern const unsigned char audio_worklet_js_start[]  asm("_binary_audio_worklet_js_start");
     extern const unsigned char audio_worklet_js_end[]    asm("_binary_audio_worklet_js_end");
-    extern const unsigned char audio_stream_js_start[]  asm("_binary_audio_stream_js_start");
-    extern const unsigned char audio_stream_js_end[]    asm("_binary_audio_stream_js_end");
+    extern const unsigned char audio_effects_js_start[]  asm("_binary_audio_effects_js_start");
+    extern const unsigned char audio_effects_js_end[]    asm("_binary_audio_effects_js_end");
     extern const unsigned char style_css_start[]  asm("_binary_style_css_start");
     extern const unsigned char style_css_end[]    asm("_binary_style_css_end");
     extern const unsigned char value_control_css_start[]  asm("_binary_value_control_css_start");
@@ -140,9 +140,9 @@ static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
         start = audio_worklet_js_start;
         end = audio_worklet_js_end;
         httpd_resp_set_type(req, "application/javascript");
-    } else if (strcmp(file_path, "audio-stream.js") == 0) {
-        start = audio_stream_js_start;
-        end = audio_stream_js_end;
+    } else if (strcmp(file_path, "audio-effects.js") == 0) {
+        start = audio_effects_js_start;
+        end = audio_effects_js_end;
         httpd_resp_set_type(req, "application/javascript");
     } else if (strcmp(file_path, "value-control.css") == 0) {
         start = value_control_css_start;

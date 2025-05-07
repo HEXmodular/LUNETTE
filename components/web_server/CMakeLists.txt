@@ -22,6 +22,6 @@ idf_component_register(
         "static/value-control.js" 
         "static/value-control.css" 
         "static/style.css"
-        "static/audio-stream.js"
+        "static/audio-effects.js"
         "static/audio-worklet.js"
 )
