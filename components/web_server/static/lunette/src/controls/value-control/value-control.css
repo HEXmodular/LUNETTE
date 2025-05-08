@@ -1,0 +1,61 @@
+.value-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.value-display {
+    font-family: monospace;
+    font-size: 1.2em;
+    color: #333;
+    min-width: 60px;
+    text-align: right;
+    padding: 0 10px;
+}
+
+.value-control label {
+    font-size: 14px;
+    color: #333;
+    margin-left: 4px;
+}
+
+.value-control .control-container {
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.value-control .value-display {
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+    color: #333;
+}
+
+.value-control .value-slider {
+    height: 4px;
+    background-color: #ddd;
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+
+.value-control .value-slider::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: #666;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: background-color 0.2s;
+}
+
+.value-control .value-slider.active::after {
+    background-color: #333;
+}
