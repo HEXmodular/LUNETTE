@@ -23,6 +23,12 @@ typedef struct {
     bool lru_purge_enable;            /*!< Enable LRU purge */
     uint16_t recv_wait_timeout;       /*!< Timeout for receiving data */
     uint16_t send_wait_timeout;       /*!< Timeout for sending data */
+    bool use_ssl;                     /*!< Enable SSL/TLS */
+    const char *cert_pem;             /*!< Server certificate in PEM format */
+    const char *private_key_pem;      /*!< Server private key in PEM format */
+    bool use_global_ca_store;         /*!< Use global CA store for client verification */
+    const char *client_cert_pem;      /*!< Client certificate in PEM format for mutual auth */
+    const char *client_key_pem;       /*!< Client private key in PEM format for mutual auth */
 } web_server_config_t;
 
 

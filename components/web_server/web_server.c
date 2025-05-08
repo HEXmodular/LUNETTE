@@ -6,6 +6,8 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_http_server.h"
+#include "esp_https_server.h"
+#include "mdns.h"
 #include "cJSON.h"
 
 static const char *TAG = "web_server";
@@ -21,6 +23,37 @@ static int ws_req_fd = 0;
 static output_handle_t output = NULL;
 
 // execute_buffer_ready_callback
+
+// lunette.local to connect to the web server
+void start_mdns_service()
+{
+    ESP_LOGI(TAG, "Starting MDNS service");
+
+    // Initialize MDNS service
+    esp_err_t err = mdns_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize MDNS: %s", esp_err_to_name(err));
+        return;
+    }
+
+    ESP_ERROR_CHECK(mdns_hostname_set("lunette"));
+
+    // Set MDNS instance name
+    err = mdns_instance_name_set("LUNETTE");
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set MDNS instance name: %s", esp_err_to_name(err));
+        return;
+    }
+
+    // Add service for HTTPS
+    err = mdns_service_add(NULL, "_https", "_tcp", 443, NULL, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add HTTPS service: %s", esp_err_to_name(err));
+        return;
+    }
+
+    ESP_LOGI(TAG, "MDNS service started successfully");
+}
 
 static void send_samples_to_client()
 {
@@ -174,8 +207,6 @@ static esp_err_t root_handler(httpd_req_t *req)
 {
     ESP_LOGD(TAG, "GET /");
     ESP_LOGD(TAG, "Request headers:");
-    //ESP_LOGD(TAG, "  Host: %s", req->host);
-    //ESP_LOGD(TAG, "  User-Agent: %s", req->user_agent);
     
     // Set response headers
     httpd_resp_set_type(req, "text/html");
@@ -195,10 +226,8 @@ static esp_err_t static_handler(httpd_req_t *req)
 {
     const char *uri = req->uri;
     const char *file_path = uri + 1; // Skip leading '/'
-    ESP_LOGI(TAG, "GET %s", uri);
-    ESP_LOGI(TAG, "Request headers:");
-    //ESP_LOGI(TAG, "  Host: %s", req->host);
-    //ESP_LOGI(TAG, "  User-Agent: %s", req->user_agent);
+    ESP_LOGD(TAG, "GET %s", uri);
+    ESP_LOGD(TAG, "Request headers:");
 
     // Set content type based on file extension
     const char *content_type = "text/plain";
@@ -213,14 +242,14 @@ static esp_err_t static_handler(httpd_req_t *req)
     } else if (strstr(file_path, ".jpg") || strstr(file_path, ".jpeg")) {
         content_type = "image/jpeg";
     }
-    ESP_LOGI(TAG, "Content-Type: %s", content_type);
+    ESP_LOGD(TAG, "Content-Type: %s", content_type);
 
     // Set response headers
     httpd_resp_set_type(req, content_type);
     httpd_resp_set_hdr(req, "Cache-Control", "public, max-age=31536000");
 
     // Send file
-    ESP_LOGI(TAG, "Sending file: %s", file_path);
+    ESP_LOGD(TAG, "Sending file: %s", file_path);
     esp_err_t err = send_file_content(req, file_path);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to send file %s: %s", file_path, esp_err_to_name(err));
@@ -260,18 +289,47 @@ static bool uri_match_fn(const char *reference_uri, const char *uri_to_match, si
 // Start web server with custom configuration
 httpd_handle_t start_webserver(void)
 {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.lru_purge_enable = true;
-    config.uri_match_fn = uri_match_fn;  // Set our custom URI matching function
-    config.max_open_sockets = 4;  // Allow multiple WebSocket connections
+    // httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    // config.lru_purge_enable = true;
+    // config.uri_match_fn = uri_match_fn;  // Set our custom URI matching function
+    // config.max_open_sockets = 4;  // Allow multiple WebSocket connections
 
-    ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
+    // ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
     
-    esp_err_t err = httpd_start(&server, &config);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Error starting server!");
+    esp_err_t err;
+
+    httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
+    // conf.httpd.max_open_sockets = max_clients;
+    // conf.httpd.global_user_ctx = keep_alive;
+    // conf.httpd.open_fn = wss_open_fd;
+    // conf.httpd.close_fn = wss_close_fd;
+    conf.httpd.uri_match_fn = uri_match_fn;  // Set our custom URI matching function
+
+    extern const unsigned char certificate_pem_start[] asm("_binary_certificate_pem_start");
+    extern const unsigned char certificate_pem_end[]   asm("_binary_certificate_pem_end");
+    size_t cert_len = certificate_pem_end - certificate_pem_start;
+    conf.servercert = certificate_pem_start;
+    conf.servercert_len = cert_len;
+
+    extern const unsigned char private_key_pem_start[] asm("_binary_private_key_pem_start");
+    extern const unsigned char private_key_pem_end[]   asm("_binary_private_key_pem_end");
+    conf.prvtkey_pem = private_key_pem_start;
+    conf.prvtkey_len = private_key_pem_end - private_key_pem_start;
+
+    esp_err_t ret = httpd_ssl_start(&server, &conf);
+    if (ESP_OK != ret) {
+        ESP_LOGI(TAG, "Error starting server!");
         return NULL;
     }
+
+        // Regular HTTP server
+        // err = httpd_start(&server, &config);
+    
+    
+    // if (err != ESP_OK) {
+    //     ESP_LOGE(TAG, "Error starting server!");
+    //     return NULL;
+    // }
 
     // URI handler for root path
     httpd_uri_t root_uri = {
@@ -326,6 +384,9 @@ esp_err_t web_server_init(void)
         ESP_LOGW(TAG, "Web server already running");
         return ESP_OK;
     }
+
+    // Start mDNS service
+    start_mdns_service();
 
     // Start web server with configuration
     server = start_webserver();

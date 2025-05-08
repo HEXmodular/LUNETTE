@@ -16,6 +16,8 @@ idf_component_register(
         "esp_http_client"
         "esp_websocket_client"
         "output"
+        "esp_https_server"
+        "mdns"
     EMBED_FILES 
         "static/index.html" 
         "static/scripts.js" 
@@ -24,4 +26,7 @@ idf_component_register(
         "static/style.css"
         "static/audio-effects.js"
         "static/audio-worklet.js"
+    EMBED_TXTFILES
+        "certs/certificate.pem"
+        "certs/private_key.pem"
 )
