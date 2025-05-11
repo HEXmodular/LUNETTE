@@ -2,11 +2,7 @@
 .oscillator-control {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 2px 0;
 }
 
 .oscillator-control .title {
@@ -16,6 +12,8 @@
     margin-bottom: 8px;
 }
 
-.oscillator-control .value-control {
-    flex: 1;
+.oscillator-control-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }

@@ -1,30 +1,86 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SelectControl } from '@controls/select-control/select-control';
+import type { LogicBlockConfig } from '@api/logicBlockApi';
+
 import './logic-block.css';
 
 const logicBlockTypes = ['AND', 'NAND', 'OR', 'NOR', 'XOR', 'XNOR', 'OFF'];
 const logicConnectionsTypes = ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'];
 
 interface LogicBlockProps {
-    onBlockTypeChange?: (id: string | undefined, index: number, value: boolean) => void;
-    onConnectionTypeChange?: (id: string | undefined, index: number, value: boolean) => void;
+    id: number;
+    title?: string;
+    onBlockChange: (data: LogicBlockConfig) => void;
 }
 
 const LogicBlock: React.FC<LogicBlockProps> = ({
-    onBlockTypeChange,
-    onConnectionTypeChange
+    id,
+    title,
+    onBlockChange,
 }) => {
+    const [blockType, setBlockType] = useState<string>(logicBlockTypes[0]);
+    const [connection1Id, setConnection1Id] = useState<string>(logicConnectionsTypes[0]);
+    const [connection2Id, setConnection2Id] = useState<string>(logicConnectionsTypes[0]);
+
+    const handleChange = () => {
+        const data = {
+            logic_block_id: id,
+            operation_type: blockType,
+            conection1_id: connection1Id,
+            conection2_id: connection2Id
+        }
+
+        onBlockChange(data);
+    }
+
+    const onConnectionTypeChange = (id: string, index: number, value: boolean) => {
+        if (!value) {
+            return;
+        }
+
+        if (id === '1') {
+            setConnection1Id(logicConnectionsTypes[index]);
+        } else {
+            setConnection2Id(logicConnectionsTypes[index]);
+        }
+        handleChange();
+    }
+
+
+
+    const onBlockTypeChange = (_: any, index: number, value: boolean) => {
+        if (!value) {
+            return;
+        }
+
+        setBlockType(logicBlockTypes[index]);
+        handleChange();
+    }
+
     return (
         <div className="logic-block-section">
-            <div className="title">LOP 1</div>
-            <div className="logic-block">
-                <SelectControl
-                    id="connection-type"
-                    labels={logicConnectionsTypes}
-                    mode="single"
-                    onChange={onConnectionTypeChange}
-                />
+            <div className="title">{title}</div>
+            <div className="connection-block">
+                <div className="logic-block">
+                    <SelectControl
+                        id="1"
+                        labels={logicConnectionsTypes}
+                        mode="single"
+                        columns={2}
+                        onChange={onConnectionTypeChange}
+                    />
+                </div>
+                <div className="logic-block">
+                    <SelectControl
+                        id="2"
+                        labels={logicConnectionsTypes}
+                        mode="single"
+                        columns={2}
+                        onChange={onConnectionTypeChange}
+                    />
+                </div>
             </div>
+
             <div className="arrow-down-container">
                 <div className="arrow-down">↓</div>
                 <div className="arrow-down">↓</div>
@@ -38,7 +94,6 @@ const LogicBlock: React.FC<LogicBlockProps> = ({
                         onChange={onBlockTypeChange}
                     />
                 </div>
-
             </div>
         </div>
     );

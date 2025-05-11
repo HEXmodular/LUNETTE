@@ -36,15 +36,20 @@ esp_err_t logical_ops_post_handler(httpd_req_t *req)
 
     cJSON *logic_block_id_obj = cJSON_GetObjectItem(root, "logic_block_id");
     cJSON *operation_type_obj = cJSON_GetObjectItem(root, "operation_type");
+    cJSON *conection1_id_obj = cJSON_GetObjectItem(root, "conection1_id");
+    cJSON *conection2_id_obj = cJSON_GetObjectItem(root, "conection2_id");
 
-    if (!logic_block_id_obj || !operation_type_obj) {
+    if (!logic_block_id_obj || !operation_type_obj || !conection1_id_obj || !conection2_id_obj) {
         ESP_LOGE(TAG, "Missing required field: %s", 
-                 !logic_block_id_obj ? "logic_block_id" : "operation_type");
+                 !logic_block_id_obj ? "logic_block_id" : 
+                 !operation_type_obj ? "operation_type" : 
+                 !conection1_id_obj ? "conection1_id" : 
+                 "conection2_id");
         cJSON_Delete(root);
         return send_error_response(req, 400, "Missing required field");
     }
 
-    if (!cJSON_IsNumber(logic_block_id_obj) || !cJSON_IsString(operation_type_obj)) {
+    if (!cJSON_IsNumber(logic_block_id_obj) || !cJSON_IsString(operation_type_obj) || !cJSON_IsNumber(conection1_id_obj) || !cJSON_IsNumber(conection2_id_obj)) {
         cJSON_Delete(root);
         return send_error_response(req, 400, "Invalid field type");
     }
@@ -83,6 +88,17 @@ esp_err_t logical_ops_post_handler(httpd_req_t *req)
     if (err != ESP_OK) {
         cJSON_Delete(root);
         return send_error_response(req, 500, "Failed to set operation type");
+    }
+
+    // Set inputs
+    Oscillator* oscillators = oscillator_logic_get_oscillators();
+    bool* input1 = &oscillators[conection1_id_obj->valueint].result_bool;
+    bool* input2 = &oscillators[conection2_id_obj->valueint].result_bool;
+
+    err = logical_ops_set_inputs(&logical_ops[logic_block_id], input1, input2);
+    if (err != ESP_OK) {
+        cJSON_Delete(root);
+        return send_error_response(req, 500, "Failed to set inputs");
     }
 
     cJSON_Delete(root);

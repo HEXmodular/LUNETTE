@@ -58,7 +58,7 @@ export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
     };
 
     const calculateDistance = (x1: number, y1: number, x2: number, y2: number) => {
-        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        return Math.abs(x2 - x1) + Math.abs(y2 - y1);
     };
 
     const getHandlePosition = (value: number) => {

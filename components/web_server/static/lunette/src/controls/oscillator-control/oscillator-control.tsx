@@ -11,8 +11,8 @@ interface OscillatorControlProps {
 
 const OscillatorControl: React.FC<OscillatorControlProps> = ({
     header = 'Oscillator',
-    showHeader = true,
-    showLabel = true,
+    showHeader = false,
+    showLabel = false,
     onChange
 }) => {
     const [isUpdating, setIsUpdating] = useState(false);
@@ -25,7 +25,7 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
     // }, [noteNames]);
 
     const frequencyToMidiNote = useCallback((frequency: number) => {
-        return Math.round(12 * Math.log2(frequency/440) + 69);
+        return Math.round(12 * Math.log2(frequency / 440) + 69);
     }, []);
 
     const midiNoteToFrequency = useCallback((note: number) => {
@@ -35,46 +35,48 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
     const handleFrequencyChange = useCallback((frequency: number) => {
         if (isUpdating) return;
         setIsUpdating(true);
-        
+
         // const midiNote = frequencyToMidiNote(frequency);
         onChange?.(Math.round(frequency));
-        
+
         setIsUpdating(false);
     }, [isUpdating, frequencyToMidiNote, onChange]);
 
     const handleNoteChange = useCallback((note: number) => {
         if (isUpdating) return;
         setIsUpdating(true);
-        
+
         const frequency = midiNoteToFrequency(note);
         onChange?.(Math.round(frequency));
-        
+
         setIsUpdating(false);
     }, [isUpdating, midiNoteToFrequency, onChange]);
 
     return (
         <div className="oscillator-control">
             {showHeader && <div className="title">{header}</div>}
-            <ValueControl
-                id="frequency"
-                label="Frequency (Hz)"
-                min={20}
-                max={2000}
-                initialValue={440}
-                onChange={handleFrequencyChange}
-                // formatValue={(value) => `${Math.round(value)} Hz`}
-                showLabel={showLabel}
-            />
-            <ValueControl
-                id="note"
-                label="Note"
-                min={0}
-                max={127}
-                initialValue={69}
-                onChange={handleNoteChange}
-                // formatValue={getNoteDisplay}
-                showLabel={showLabel}
-            />
+            <div className="oscillator-control-container">
+                <ValueControl
+                    id="frequency"
+                    label="Frequency (Hz)"
+                    min={20}
+                    max={2000}
+                    initialValue={440}
+                    onChange={handleFrequencyChange}
+                    // formatValue={(value) => `${Math.round(value)} Hz`}
+                    showLabel={showLabel}
+                />
+                <ValueControl
+                    id="note"
+                    label="Note"
+                    min={0}
+                    max={127}
+                    initialValue={69}
+                    onChange={handleNoteChange}
+                    // formatValue={getNoteDisplay}
+                    showLabel={showLabel}
+                />
+            </div>
         </div>
     );
 };

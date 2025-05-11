@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
+import './select-control.css';
 
 interface SelectControlProps {
-    id?: string;
+    id: string;
     labels: string[];
     columns?: number;
     mode?: 'multiple' | 'single';
-    onChange?: (id: string | undefined, index: number, value: boolean) => void;
+    onChange: (id: string, index: number, value: boolean) => void;
     initialValues?: boolean[];
 }
 

@@ -10,7 +10,25 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
-      '@controls': path.resolve(__dirname, './src/controls')
+      '@controls': path.resolve(__dirname, './src/controls'),
+      '@audio': path.resolve(__dirname, './src/audio'),
+      '@websocket': path.resolve(__dirname, './src/websocket'),
+      '@worklets': path.resolve(__dirname, './public/worklets'),
+      '@api': path.resolve(__dirname, './src/api'),
     }
-  }
+  },
+
+  build: {
+    rollupOptions: {
+      output: {
+        // Отключение хэшей для входных файлов (например, main.js)
+        entryFileNames: `[name].js`,
+        // Отключение хэшей для динамически импортируемых чанков
+        chunkFileNames: `[name].js`,
+        // Отключение хэшей для других ассетов (CSS, изображения, шрифты)
+        // [ext] - расширение файла, [name] - оригинальное имя файла
+        assetFileNames: `[name].[ext]`, // Если вы хотите сохранить вложенность, используйте `assets/[name].[ext]`
+      },
+    },
+  },
 })

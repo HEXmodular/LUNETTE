@@ -19,13 +19,11 @@ idf_component_register(
         "esp_https_server"
         "mdns"
     EMBED_FILES 
-        "static/index.html" 
-        "static/scripts.js" 
-        "static/value-control.js" 
-        "static/value-control.css" 
-        "static/style.css"
-        "static/audio-effects.js"
-        "static/audio-worklet.js"
+        "static/lunette/dist/index.html" 
+        "static/lunette/dist/index.js" 
+        "static/lunette/dist/index.css" 
+        "static/lunette/dist/worklets/audio-worklet.js"
+        "static/lunette/dist/worklets/reverb-algo-worklet.js"
     EMBED_TXTFILES
         "certs/certificate.pem"
         "certs/private_key.pem"

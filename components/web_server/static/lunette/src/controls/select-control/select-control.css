@@ -1,14 +1,11 @@
 /* LogicBlockControl styles */
-.logic-block-control {
-}
-
 .logic-block-btn {
-    background: #f0f0f0;
+    background: #eee;
     color: #555;
     border: 0;
     font-size: 16px;
     font-weight: 600;
-    padding: 18px 0;
+    padding: 14px 0;
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;

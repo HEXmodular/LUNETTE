@@ -135,18 +135,14 @@ static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
     
     extern const unsigned char index_html_start[] asm("_binary_index_html_start");
     extern const unsigned char index_html_end[]   asm("_binary_index_html_end");
-    extern const unsigned char scripts_js_start[]  asm("_binary_scripts_js_start");
-    extern const unsigned char scripts_js_end[]    asm("_binary_scripts_js_end");
-    extern const unsigned char value_control_js_start[]  asm("_binary_value_control_js_start");
-    extern const unsigned char value_control_js_end[]    asm("_binary_value_control_js_end");
-    extern const unsigned char audio_worklet_js_start[]  asm("_binary_audio_worklet_js_start");
-    extern const unsigned char audio_worklet_js_end[]    asm("_binary_audio_worklet_js_end");
-    extern const unsigned char audio_effects_js_start[]  asm("_binary_audio_effects_js_start");
-    extern const unsigned char audio_effects_js_end[]    asm("_binary_audio_effects_js_end");
-    extern const unsigned char style_css_start[]  asm("_binary_style_css_start");
-    extern const unsigned char style_css_end[]    asm("_binary_style_css_end");
-    extern const unsigned char value_control_css_start[]  asm("_binary_value_control_css_start");
-    extern const unsigned char value_control_css_end[]    asm("_binary_value_control_css_end");
+    extern const unsigned char index_js_start[]   asm("_binary_index_js_start");
+    extern const unsigned char index_js_end[]     asm("_binary_index_js_end");
+    extern const unsigned char index_css_start[]  asm("_binary_index_css_start");
+    extern const unsigned char index_css_end[]    asm("_binary_index_css_end");
+    extern const unsigned char audio_worklet_js_start[] asm("_binary_audio_worklet_js_start");
+    extern const unsigned char audio_worklet_js_end[]   asm("_binary_audio_worklet_js_end");
+    extern const unsigned char reverb_algo_worklet_js_start[] asm("_binary_reverb_algo_worklet_js_start");
+    extern const unsigned char reverb_algo_worklet_js_end[]   asm("_binary_reverb_algo_worklet_js_end");
     
     const unsigned char *start = NULL;
     const unsigned char *end = NULL;
@@ -157,30 +153,22 @@ static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
         start = index_html_start;
         end = index_html_end;
         httpd_resp_set_type(req, "text/html");
-    } else if (strcmp(file_path, "scripts.js") == 0) {
-        start = scripts_js_start;
-        end = scripts_js_end;
+    } else if (strcmp(file_path, "index.js") == 0) {
+        start = index_js_start;
+        end = index_js_end;
         httpd_resp_set_type(req, "application/javascript");
-    } else if (strcmp(file_path, "value-control.js") == 0) {
-        start = value_control_js_start;
-        end = value_control_js_end;
-        httpd_resp_set_type(req, "application/javascript");
-    } else if (strcmp(file_path, "style.css") == 0) {
-        start = style_css_start;
-        end = style_css_end;
+    } else if (strcmp(file_path, "index.css") == 0) {
+        start = index_css_start;
+        end = index_css_end;
         httpd_resp_set_type(req, "text/css");
     } else if (strcmp(file_path, "audio-worklet.js") == 0) {
         start = audio_worklet_js_start;
         end = audio_worklet_js_end;
         httpd_resp_set_type(req, "application/javascript");
-    } else if (strcmp(file_path, "audio-effects.js") == 0) {
-        start = audio_effects_js_start;
-        end = audio_effects_js_end;
+    } else if (strcmp(file_path, "reverb-algo-worklet.js") == 0) {
+        start = reverb_algo_worklet_js_start;
+        end = reverb_algo_worklet_js_end;
         httpd_resp_set_type(req, "application/javascript");
-    } else if (strcmp(file_path, "value-control.css") == 0) {
-        start = value_control_css_start;
-        end = value_control_css_end;
-        httpd_resp_set_type(req, "text/css");
     } else {
         ESP_LOGE(TAG, "File not found: %s", file_path);
         return ESP_FAIL;

@@ -28,7 +28,11 @@
     "paths": {
       "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
-      "@controls/*": ["src/controls/*"]
+      "@controls/*": ["src/controls/*"],
+      "@audio/*": ["src/audio/*"],
+      "@websocket/*": ["src/websocket/*"],
+      "@worklets/*": ["public/worklets/*"],
+      "@api/*": ["src/api/*"]
     }
   },
   "include": ["src"]
