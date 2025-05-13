@@ -33,6 +33,7 @@ esp_err_t oscillator_get_handler(httpd_req_t *req)
 
     for (int i = 0; i < 4; i++) {
         cJSON *osc = cJSON_CreateObject();
+        cJSON_AddNumberToObject(osc, "oscillator_id", i);
         cJSON_AddNumberToObject(osc, "frequency", oscillators[i].frequency);
         cJSON_AddNumberToObject(osc, "amplitude", oscillators[i].amplitude);
         cJSON_AddItemToArray(arr, osc);
@@ -97,7 +98,7 @@ esp_err_t oscillator_post_handler(httpd_req_t *req)
 
 const api_endpoint_t oscillator_endpoints[] = (api_endpoint_t[]){
     (api_endpoint_t){
-        .uri = "/api/oscillator",
+        .uri = "/api/oscillators",
         .method = HTTP_GET,
         .handler = oscillator_get_handler,
         .user_ctx = NULL

@@ -6,15 +6,20 @@
 #include "timer.h"
 
 #define MHZ                             (1000000)
-#define EXAMPLE_OVER_SAMPLE_RATE        (10 * MHZ)          // 10 MHz over sample rate
-#define EXAMPLE_TIMER_RESOLUTION        (1  * MHZ)          // 1 MHz timer counting resolution
-#define EXAMPLE_CALLBACK_INTERVAL_US    (100)               // 100 us interval of each timer callback = 100 kHz
-#define EXAMPLE_ALARM_COUNT             (EXAMPLE_CALLBACK_INTERVAL_US * (EXAMPLE_TIMER_RESOLUTION / MHZ))
+#define KHZ                            (1000)
+#define OVER_SAMPLE_RATE               (10 * MHZ)          // for PDM output
+
 
 // Convert boolean to PDM value (-128 to 127)
 #define BOOL_TO_PDM(value) ((value) ? 127 : -128)
 
-ESP_STATIC_ASSERT(EXAMPLE_CALLBACK_INTERVAL_US >= 7, "Timer callback interval is too short");
+// реализует две функции хранение буфера и вывод сигнала на пин PDM
+
+// жтот компонент МОЖЕТ отвечать за генерацию сигнала на пине выхода
+// его высокая частота позволяет обойти ограничения по битности
+// через дополнительный софтовый дельта сигма алгоритм
+
+//  сейчас он работает на частоте вызова
 
 static const char *TAG = "output";
 
@@ -39,14 +44,15 @@ void output_register_buffer_ready_callback(void (*callback)(void)) {
     buffer_ready_callback = callback;
 }
 
-// Function to execute callback when buffer is ready
+//  для предотвращения обращения к несуществующему указателю
 static void execute_buffer_ready_callback(void) {
     if (buffer_ready_callback != NULL) {
         buffer_ready_callback();
     }
 }
 
-
+// функция для генерации сигнала на пине выхода
+// записывает в буфер значение сигнала
 void output_timer_callback(void)
 {
     if (g_output_instance && g_output_instance->value_ptr) {
@@ -65,6 +71,8 @@ void output_timer_callback(void)
     }
 }
 
+// функция для генерации сигнала на пине выхода
+// записывает в буфер значение сигнала
 void output_timer_callback_bool(void)
 {
     if (g_output_instance && g_output_instance->value_ptr_bool) {
@@ -83,13 +91,14 @@ void output_timer_callback_bool(void)
     }
 }
 
+// инициализация SDM канала
 static sdm_channel_handle_t example_init_sdm(int gpio_num)
 {
     sdm_channel_handle_t sdm_chan = NULL;
     sdm_config_t config = {
         .clk_src = SDM_CLK_SRC_DEFAULT,
         .gpio_num = gpio_num,
-        .sample_rate_hz = EXAMPLE_OVER_SAMPLE_RATE,
+        .sample_rate_hz = OVER_SAMPLE_RATE,
     };
     ESP_ERROR_CHECK(sdm_new_channel(&config, &sdm_chan));
     ESP_ERROR_CHECK(sdm_channel_enable(sdm_chan));
@@ -97,6 +106,7 @@ static sdm_channel_handle_t example_init_sdm(int gpio_num)
     return sdm_chan;
 }
 
+// инициализация экземпляра output
 static output_handle_t output_init_common(int gpio_num) {
     if (g_output_instance != NULL) {
         ESP_LOGW(TAG, "Output already initialized");
@@ -111,7 +121,7 @@ static output_handle_t output_init_common(int gpio_num) {
 
     // Initialize pointers to NULL
     instance->value_ptr = NULL;
-    instance->value_ptr_bool = NULL;
+    instance->value_ptr_bool = NULL; //  для хранения указателя откуда забирать данные
     instance->sample_count = 0;
     instance->buffer_ready = false;
     
@@ -128,6 +138,7 @@ static output_handle_t output_init_common(int gpio_num) {
     return (output_handle_t)instance;
 }
 
+// создание экземпляра output для работы с булевым значением
 output_handle_t output_init_bool(int gpio_num, bool* value_ptr)
 {
     output_handle_t handle = output_init_common(gpio_num);
@@ -138,6 +149,7 @@ output_handle_t output_init_bool(int gpio_num, bool* value_ptr)
     return handle;
 }
 
+// создание экземпляра output для работы с целым значением
 output_handle_t output_init(int gpio_num, int8_t* value_ptr)
 {
     output_handle_t handle = output_init_common(gpio_num);
@@ -148,6 +160,7 @@ output_handle_t output_init(int gpio_num, int8_t* value_ptr)
     return handle;
 }
 
+// не используется
 void output_set_value_ptr(output_handle_t handle, int8_t* value_ptr)
 {
     output_instance_t* instance = (output_instance_t*)handle;
@@ -156,6 +169,7 @@ void output_set_value_ptr(output_handle_t handle, int8_t* value_ptr)
     }
 }
 
+// не используется
 void output_set_bool_value_ptr(output_handle_t handle, bool* value_ptr_bool)
 {
     output_instance_t* instance = (output_instance_t*)handle;
@@ -177,6 +191,7 @@ void output_deinit(output_handle_t handle)
     }
 }
 
+// для получения буфера с выходными значениями
 esp_err_t output_get_samples(output_handle_t handle, int8_t* buffer, size_t size)
 {
     output_instance_t* instance = (output_instance_t*)handle;

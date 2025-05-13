@@ -16,9 +16,12 @@
 #define CALLBACK_FREQUENCY             (SYSTEM_SAMPLE_RATE)
 #define ALARM_COUNT                    (TIMER_RESOLUTION /CALLBACK_FREQUENCY)
 
+
 static const char *TAG = "timer";
 static gptimer_handle_t timer_handle = NULL;
 static volatile bool event_post_error = false;
+
+// общие часики для всех аудио компонентов, работают на частоте SYSTEM_SAMPLE_RATE
 
 // Event loop declarations
 ESP_EVENT_DECLARE_BASE(TIMER_EVENTS);

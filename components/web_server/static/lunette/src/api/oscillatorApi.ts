@@ -1,18 +1,28 @@
 import { BaseApi } from './baseApi';
+import customDebounce from '@utils/customDebounce';
 
-interface OscillatorConfig {
+export interface OscillatorConfig {
     oscillator_id: number;
     frequency: number;
     amplitude: number;
 }
 
+interface OscillatorResponse {
+    oscillators: OscillatorConfig[];
+}
+
 const useOscillatorApi = () => {
-    const updateOscillator = async (config: OscillatorConfig): Promise<void> => {
-        return BaseApi.post('oscillator', config);
+    const updateOscillator = customDebounce(async (config: OscillatorConfig) => {
+        return await BaseApi.post('oscillator', config);
+    }, 500, { maxWait: 1000 });
+
+    const getOscillators = async () => {
+        return await BaseApi.get<OscillatorResponse>('oscillators').then((data) => data.oscillators);
     };
 
     return {
-        updateOscillator
+        updateOscillator,
+        getOscillators,
     };
 };
 

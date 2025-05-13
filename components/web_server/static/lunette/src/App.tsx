@@ -2,20 +2,25 @@
 import { useEffect, useState } from 'react'
 
 import OscillatorControl from '@controls/oscillator-control/oscillator-control'
-import LogicBlock from '@controls/logic-block/logic-block'
+import AlgorithmBlock from '@algorithm/algorithm-4o3l/algorithm-block'
 import MixerBlock from '@controls/mixer-block/mixer-block'
 
 import { useWebSocketAudioInput } from '@audio/webSocketAudioInput'
 // import { useReverbAlgo } from '@audio/reverbAlgo'
-import useOscillatorApi  from '@api/oscillatorApi'
-import useLogicBlockApi from '@api/logicBlockApi'
 
+
+import useLogicBlockApi, { type LogicBlockConfig } from '@api/logicBlockApi'
+
+import type { OscillatorConfig } from '@api/oscillatorApi'
+import useOscillatorApi from '@api/oscillatorApi'
 import './App.css'
 
 // const audioContext = new AudioContext();
 
 function App() {
 
+  const [oscillators, setOscillators] = useState<OscillatorConfig[]>([]);
+  const [logicBlocks, setLogicBlocks] = useState<LogicBlockConfig[]>([]);
   const wsUrl = import.meta.env.DEV ? 'https://lunette.local/ws' : '/ws';
 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -23,8 +28,63 @@ function App() {
   const { audioWorkletNode } = useWebSocketAudioInput(audioContext, wsUrl);
   // const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(audioContext);
 
-  const { updateOscillator } = useOscillatorApi();
-  const { updateLogicBlock } = useLogicBlockApi();
+  const { getOscillators, updateOscillator } = useOscillatorApi();
+  const { getLogicBlocks, updateLogicBlock } = useLogicBlockApi();
+
+
+  useEffect(() => {
+    (async () => {
+      const oscillators = await getOscillators();
+      if (oscillators.length > 0) {
+        setOscillators(oscillators);
+      }
+
+      const logics = await getLogicBlocks();
+      console.log('App logics', logics);
+
+      // const dummyLogics = [
+      //   {
+      //     logic_block_id: 0,
+      //     operation_type: "LOGICAL_OP_AND",
+      //     input1_id: "0",
+      //     input1_type: "INPUT_TYPE_OSCILLATOR",
+      //     input2_id: "1",
+      //     input2_type: "INPUT_TYPE_OSCILLATOR"
+      //   },
+      //   {
+      //     logic_block_id: 1,
+      //     operation_type: "LOGICAL_OP_OR",
+      //     input1_id: "1",
+      //     input1_type: "INPUT_TYPE_OSCILLATOR",
+      //     input2_id: "0",
+      //     input2_type: "INPUT_TYPE_OSCILLATOR"
+      //   },
+      //   {
+      //     logic_block_id: 2,
+      //     operation_type: "LOGICAL_OP_XOR",
+      //     input1_id: "0",
+      //     input1_type: "INPUT_TYPE_OSCILLATOR",
+      //     input2_id: "0",
+      //     input2_type: "INPUT_TYPE_OSCILLATOR"
+      //   },
+      // ]
+
+      // console.log('App dummyLogics', dummyLogics);
+
+      setLogicBlocks(logics);
+    })()
+  }, []);
+
+  const setValueBlock = (config: LogicBlockConfig) => {
+
+    const index = config.logic_block_id;
+    const newLogicBlocks = [...logicBlocks];
+    newLogicBlocks[index] = config;
+    console.log('App setValueBlock newLogicBlocks', config, newLogicBlocks);
+    setLogicBlocks(newLogicBlocks);
+    updateLogicBlock(config);
+    // console.log('setValueBlock', config);
+  }
 
   // useEffect(() => {
   //   if (audioEngineStarted && reverbAlgoNode) {
@@ -47,7 +107,6 @@ function App() {
       // audioWorkletNode.connect(reverbAlgoNode);
       const audioContextRef = new AudioContext();
       setAudioContext(audioContextRef);
-      console.log('audioContextRef', audioContextRef);
       // audioWorkletNode.connect(audioContextRef.destination);
       // console.log('audioWorkletNode connected to audioContext.destination');
     }
@@ -58,7 +117,6 @@ function App() {
     console.log('audioWorkletNode', audioWorkletNode);
     if (audioContext && audioWorkletNode) {
       audioWorkletNode.connect(audioContext.destination);
-      console.log('audioWorkletNode connected to audioContext.destination');
     }
   }, [audioContext, audioWorkletNode]);
 
@@ -80,43 +138,61 @@ function App() {
 
       </div>
       <div className="content-block">
-        <OscillatorControl showLabel onChange={(frequency) => {
-          updateOscillator({
-            oscillator_id: 0,
-            frequency: frequency,
-            amplitude: 1.0,
-          });
-        }} />
-        <OscillatorControl onChange={(frequency) => {
-          updateOscillator({
-            oscillator_id: 1,
-            frequency: frequency,
-            amplitude: 1.0,
-          });
-        }} />
-        <OscillatorControl onChange={(frequency) => {
-          updateOscillator({
-            oscillator_id: 2,
-            frequency: frequency,
-            amplitude: 1.0,
-          });
-        }} />
-        <OscillatorControl onChange={(frequency) => {
-          updateOscillator({
-            oscillator_id: 3,
-            frequency: frequency,
-            amplitude: 1.0,
-          });
-        }} />
+        <OscillatorControl
+          config={oscillators[0]}
+          showLabel={true}
+          onChange={(frequency) => {
+            updateOscillator({
+              oscillator_id: 0,
+              frequency: frequency,
+              amplitude: 1.0,
+            });
+          }} />
+        <OscillatorControl
+          config={oscillators[1]}
+          onChange={(frequency) => {
+            updateOscillator({
+              oscillator_id: 1,
+              frequency: frequency,
+              amplitude: 1.0,
+            });
+          }} />
+        <OscillatorControl
+          config={oscillators[2]}
+          onChange={(frequency) => {
+            updateOscillator({
+              oscillator_id: 2,
+              frequency: frequency,
+              amplitude: 1.0,
+            });
+          }} />
+        <OscillatorControl
+          config={oscillators[3]}
+          onChange={(frequency) => {
+            updateOscillator({
+              oscillator_id: 3,
+              frequency: frequency,
+              amplitude: 1.0,
+            });
+          }} />
       </div>
 
       <div className="content-block">
         <div className="cols-2">
-          <LogicBlock title="LOP 1" id={1} onBlockChange={updateLogicBlock} />
-          <LogicBlock title="LOP 2" id={2} onBlockChange={updateLogicBlock} />
+          <AlgorithmBlock title="LOP 1" id={0} onBlockChange={setValueBlock}
+            disabled={!audioEngineStarted}
+            config={logicBlocks[0]}
+          />
+          <AlgorithmBlock title="LOP 2" id={1} onBlockChange={setValueBlock}
+            disabled={!audioEngineStarted}
+            config={logicBlocks[1]}
+          />
         </div>
-        <div className="cols-2">  
-          <LogicBlock title="LOP 3" id={3} onBlockChange={updateLogicBlock} />
+        <div className="cols-2">
+          <AlgorithmBlock title="LOP 3" id={2} onBlockChange={setValueBlock}
+            disabled={!audioEngineStarted}
+            config={logicBlocks[2]}
+          />
           <MixerBlock id="mixer-1" title="MIXER 1" onMixerChange={() => { }} />
         </div>
       </div>

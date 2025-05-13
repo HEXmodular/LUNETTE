@@ -1,3 +1,4 @@
+// этот модуль для хранения всех данных о одной законченной единице из четырех осцилляторов и трех логических операций
 #include "oscillator_logic.h"
 #include "oscillator.h"
 #include "logical_ops.h"
@@ -48,10 +49,10 @@ esp_err_t oscillator_logic_init(void) {
     ESP_LOGI(TAG, "---Initializing oscillator logic component---");
 
     // Initialize oscillators
-    oscillator_init(&oscillators[0], 440.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);    
-    oscillator_init(&oscillators[1], 420.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
-    oscillator_init(&oscillators[2], 460.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
-    oscillator_init(&oscillators[3], 220.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
+    oscillator_init(&oscillators[0], 0, 440.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);    
+    oscillator_init(&oscillators[1], 1, 420.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
+    oscillator_init(&oscillators[2], 2, 460.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
+    oscillator_init(&oscillators[3], 3, 220.0, 1.0, OSCILLATOR_TYPE_SQUARE_BOOL);
 
     bool* osc1_result = oscillator_get_result_bool_pointer(&oscillators[0]);
     bool* osc2_result = oscillator_get_result_bool_pointer(&oscillators[1]);
@@ -72,19 +73,21 @@ esp_err_t oscillator_logic_init(void) {
 
     ESP_LOGI(TAG, "---Initializing first logical operator---");
     // Update logical operator inputs
-    logical_ops_set_inputs(&logical_ops[0], osc1_result, osc2_result);
-    logical_ops_set_inputs(&logical_ops[1], osc3_result, osc4_result);
+    logical_ops_set_inputs(&logical_ops[0], osc1_result, osc2_result, 0, 1);
+    logical_ops_set_inputs(&logical_ops[1], osc3_result, osc4_result, 2, 3);
 
     ESP_LOGI(TAG, "---Initializing final logical operator---");
     // Get results and feed to final logical operator
     bool* result1 = logical_ops_get_result_pointer(&logical_ops[0]);
     bool* result2 = logical_ops_get_result_pointer(&logical_ops[1]);
-    logical_ops_set_inputs(&logical_ops[2], result1, result2);
+    logical_ops_set_inputs(&logical_ops[2], result1, result2, 4, 5);
 
     ESP_LOGI(TAG, "---Initializing output---");
     // Create output instance with final logical operator result
     bool* final_result = logical_ops_get_result_pointer(&logical_ops[2]);
+
     output_init_bool(4, final_result);
+    //output_init_bool(4, final_result);
 
     ESP_LOGI(TAG, "---Initializing timer---");
     // Initialize shared timer

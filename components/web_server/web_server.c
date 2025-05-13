@@ -55,6 +55,7 @@ void start_mdns_service()
     ESP_LOGI(TAG, "MDNS service started successfully");
 }
 
+// отправляет буфер с выходными значениями на клиента
 static void send_samples_to_client()
 {
     // ESP_LOGI(TAG, "Sending samples to client");

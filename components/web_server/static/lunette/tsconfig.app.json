@@ -32,7 +32,9 @@
       "@audio/*": ["src/audio/*"],
       "@websocket/*": ["src/websocket/*"],
       "@worklets/*": ["public/worklets/*"],
-      "@api/*": ["src/api/*"]
+      "@api/*": ["src/api/*"],
+      "@utils/*": ["src/utils/*"],
+      "@algorithm/*": ["src/algorithm/*"]
     }
   },
   "include": ["src"]

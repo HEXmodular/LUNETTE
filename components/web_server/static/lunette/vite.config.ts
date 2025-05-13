@@ -15,6 +15,8 @@ export default defineConfig({
       '@websocket': path.resolve(__dirname, './src/websocket'),
       '@worklets': path.resolve(__dirname, './public/worklets'),
       '@api': path.resolve(__dirname, './src/api'),
+      '@utils': path.resolve(__dirname, './src/utils'),
+      '@algorithm': path.resolve(__dirname, './src/algorithm'),
     }
   },
 

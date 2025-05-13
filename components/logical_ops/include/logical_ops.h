@@ -9,12 +9,38 @@ typedef enum {
     LOGICAL_OP_XOR,
     LOGICAL_OP_NAND,
     LOGICAL_OP_NOR,
-    LOGICAL_OP_XNOR
+    LOGICAL_OP_XNOR,
+        // Добавьте специальное значение для подсчета количества элементов.
+    // Оно всегда должно быть последним.
+    LOGICAL_OP_COUNT
 } logical_op_t;
+
+// Массив строк, где индекс соответствует значению enum.
+// Порядок строк ДОЛЖЕН строго соответствовать порядку в enum.
+extern const char* logical_op_names[];
+
+// Создаем enum для тегов типа
+typedef enum {
+    INPUT_TYPE_NONE,
+    INPUT_TYPE_OSCILLATOR,
+    INPUT_TYPE_LOGICAL_OP,
+    INPUT_TYPE_COUNT
+} input_type_t;
+
+extern const char* input_type_names[];
+
+// Функция для получения текстового названия из массива
+const char* get_logical_op_name(logical_op_t op);
+
+const char* get_input_type_name(input_type_t type);
 
 typedef struct {
     bool *input1;
     bool *input2;
+    int input1_id;
+    int input2_id;
+    input_type_t input1_type; // Тег типа для input1
+    input_type_t input2_type; // Тег типа для input2
     logical_op_t operation;
     bool result;
 } logical_ops_t;
@@ -44,7 +70,7 @@ esp_err_t logical_ops_set_operation(logical_ops_t* ops, logical_op_t op);
  * @param input2 Second input value pointer
  * @return esp_err_t ESP_OK on success, otherwise an error code
  */
-esp_err_t logical_ops_set_inputs(logical_ops_t* ops, bool *input1, bool *input2);
+esp_err_t logical_ops_set_inputs(logical_ops_t* ops, bool *input1, bool *input2, int input1_id, int input2_id);
 
 /**
  * @brief Calculate the result of the logical operation

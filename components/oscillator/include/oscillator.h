@@ -15,6 +15,7 @@ typedef enum {
 } oscillator_type_t;
 
 typedef struct {
+    int oscillator_id;
     double frequency;
     double phase;
     double amplitude;
@@ -29,7 +30,7 @@ typedef struct {
 } Oscillator;
 
 // Initialize oscillator with given parameters
-void oscillator_init(Oscillator* osc, double frequency, double amplitude, oscillator_type_t type);
+void oscillator_init(Oscillator* osc, int oscillator_id, double frequency, double amplitude, oscillator_type_t type);
 
 // Initialize wavetable with a specific waveform
 void oscillator_init_wavetable(Oscillator* osc, const double* waveform, int size);

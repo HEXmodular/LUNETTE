@@ -5,7 +5,7 @@ import './value-control.css';
 interface ValueControlProps {
     min?: number;
     max?: number;
-    initialValue?: number;
+    value?: number;
     showLabel?: boolean;
     label?: string;
     id?: string;
@@ -16,20 +16,24 @@ interface ValueControlProps {
 const ValueControl: React.FC<ValueControlProps> = ({
     min = 0,
     max = 100,
-    initialValue = 50,
+    value = 50,
     showLabel = true,
     label = '',
     id = '',
     onChange,
     // formatValue = (value) => value.toString()
 }) => {
-    const [currentValue, setCurrentValue] = useState(initialValue);
+    const [currentValue, setCurrentValue] = useState(value);
     const [isDragging, setIsDragging] = useState(false);
     const [showRoundSlider, setShowRoundSlider] = useState(false);
     const startYRef = useRef(0);
     const lastYRef = useRef(0);
     const elementRef = useRef<HTMLDivElement>(null);
     const longPressTimer = useRef<number | null>(null);
+
+    useEffect(() => {
+        setCurrentValue(value);
+    }, [value]);
 
     const updateValue = useCallback((newValue: number) => {
         const clampedValue = Math.max(min, Math.min(max, newValue));

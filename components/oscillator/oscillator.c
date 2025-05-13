@@ -10,9 +10,10 @@ double oscillator_calculate_phase_increment(Oscillator* osc) {
     return (double)WAVETABLE_SIZE * osc->frequency / osc->sample_rate;
 }
 
-void oscillator_init(Oscillator* osc, double frequency, double amplitude, oscillator_type_t type) {
+void oscillator_init(Oscillator* osc, int oscillator_id, double frequency, double amplitude, oscillator_type_t type) {
     if (!osc || frequency <= 0.0 || amplitude < 0.0) return;
     
+    osc->oscillator_id = oscillator_id;
     osc->frequency = frequency;
     osc->amplitude = amplitude;
     osc->phase = 0.0;

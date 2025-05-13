@@ -1,11 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ValueControl from '@controls/value-control/value-control'
 import './oscillator-control.css';
+
+import type { OscillatorConfig } from '@api/oscillatorApi'
 
 interface OscillatorControlProps {
     header?: string;
     showHeader?: boolean;
     showLabel?: boolean;
+    config?: OscillatorConfig;
     onChange?: (frequency: number) => void;
 }
 
@@ -13,9 +16,16 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
     header = 'Oscillator',
     showHeader = false,
     showLabel = false,
+    config,
     onChange
 }) => {
+    const [frequency, setFrequency] = useState(config?.frequency ?? 440);
     const [isUpdating, setIsUpdating] = useState(false);
+
+    useEffect(() => {
+        setFrequency(config?.frequency ?? 440);
+    }, [config]);
+
     // const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
     // const getNoteDisplay = useCallback((midiNote: number) => {
@@ -61,7 +71,7 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
                     label="Frequency (Hz)"
                     min={20}
                     max={2000}
-                    initialValue={440}
+                    value={frequency}
                     onChange={handleFrequencyChange}
                     // formatValue={(value) => `${Math.round(value)} Hz`}
                     showLabel={showLabel}
@@ -71,7 +81,7 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
                     label="Note"
                     min={0}
                     max={127}
-                    initialValue={69}
+                    value={frequencyToMidiNote(frequency)}
                     onChange={handleNoteChange}
                     // formatValue={getNoteDisplay}
                     showLabel={showLabel}

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import './select-control.css';
 
 interface SelectControlProps {
@@ -6,8 +6,10 @@ interface SelectControlProps {
     labels: string[];
     columns?: number;
     mode?: 'multiple' | 'single';
-    onChange: (id: string, index: number, value: boolean) => void;
-    initialValues?: boolean[];
+    value?: number;
+    values?: number[];
+    disabled?: boolean;
+    onChange: (id: string, index: number, value: boolean, values?: boolean[]) => void;
 }
 
 export const SelectControl: React.FC<SelectControlProps> = ({
@@ -15,27 +17,54 @@ export const SelectControl: React.FC<SelectControlProps> = ({
     labels,
     columns = 4,
     mode = 'multiple',
+    value,
+    values,
+    disabled,
     onChange,
-    initialValues = []
 }) => {
-    const [state, setState] = useState<boolean[]>(
-        initialValues.length > 0 ? initialValues : Array(labels.length).fill(false)
-    );
+
+
+    // console.log('SelectControl id', id, 'value', value);
+
+
+    const valuesState = (valueArg?: number, valuesArray?: number[]) => {
+        if (valueArg !== undefined) {
+            // console.log('SelectControl valueArg', valueArg, Array(labels.length).fill(false).map((_, index) => index == valueArg));
+            return Array(labels.length).fill(false).map((_, index) => index == valueArg);
+        }
+        if (valuesArray) {
+            return valuesArray;
+        }
+        return Array(labels.length).fill(false);
+    }
+
+    const [isActive, setIsActive] = useState<boolean[]>(Array(labels.length).fill(false));
+
+    useEffect(() => {
+        // console.log('SelectControl state id',id, isActive, value, values);
+        if (disabled) {
+            return;
+        }
+        setIsActive(valuesState(value, values));
+    }, [value, values]);
 
     const handleToggle = useCallback((index: number) => {
+        if (disabled) {
+            return;
+        }
         if (mode === 'single') {
             const newState = Array(labels.length).fill(false);
             newState[index] = true;
-            setState(newState);
+            setIsActive(newState);
             onChange?.(id, index, true);
         } else {
-            setState(prevState => {
-                const newState = [...prevState];
-                newState[index] = !newState[index];
-                onChange?.(id, index, newState[index]);
-                return newState;
-            });
+            const newState = [...isActive];
+            newState[index] = !newState[index];
+            setIsActive(newState);
+            onChange?.(id, index, newState[index], newState);
         }
+
+
     }, [mode, labels.length, onChange, id]);
 
     // const getActiveIndices = useCallback(() => {
@@ -54,7 +83,7 @@ export const SelectControl: React.FC<SelectControlProps> = ({
             {labels.map((label, index) => (
                 <button
                     key={index}
-                    className={`logic-block-btn ${state[index] ? 'active' : ''}`}
+                    className={`logic-block-btn ${isActive[index] ? 'active' : ''}`}
                     onClick={() => handleToggle(index)}
                     data-index={index}
                 >
@@ -64,8 +93,3 @@ export const SelectControl: React.FC<SelectControlProps> = ({
         </div>
     );
 };
-
-// Helper functions to maintain API compatibility
-export const getState = (state: boolean[], index: number): boolean => state[index];
-export const getActiveIndices = (state: boolean[]): number[] => 
-    state.map((value, index) => value ? index : -1).filter(index => index !== -1);
