@@ -6,7 +6,7 @@ import AlgorithmBlock from '@algorithm/algorithm-4o3l/algorithm-block'
 import MixerBlock from '@controls/mixer-block/mixer-block'
 
 import { useWebSocketAudioInput } from '@audio/webSocketAudioInput'
-// import { useReverbAlgo } from '@audio/reverbAlgo'
+import { useReverbAlgo } from '@audio/reverbAlgo'
 
 
 import useLogicBlockApi, { type LogicBlockConfig } from '@api/logicBlockApi'
@@ -26,7 +26,7 @@ function App() {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [audioEngineStarted, setAudioEngineStarted] = useState(false);
   const { audioWorkletNode } = useWebSocketAudioInput(audioContext, wsUrl);
-  // const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(audioContext);
+  const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(audioContext);
 
   const { getOscillators, updateOscillator } = useOscillatorApi();
   const { getLogicBlocks, updateLogicBlock } = useLogicBlockApi();
@@ -86,25 +86,26 @@ function App() {
     // console.log('setValueBlock', config);
   }
 
-  // useEffect(() => {
-  //   if (audioEngineStarted && reverbAlgoNode) {
-  //     setReverbAlgoParameters({
-  //       delayTime1: 0.030,
-  //       delayTime2: 0.020,
-  //       allpassFreq1: 777,
-  //       allpassFreq2: 888,
-  //       allpassFreq3: 999,
-  //       allpassFreq4: 666,
-  //       lowpassFreq: 555,
-  //       feedbackGain: 0.5,
-  //     });
-  //   }
-  // }, [audioEngineStarted, reverbAlgoNode]);
+  useEffect(() => {
+    if (audioEngineStarted && reverbAlgoNode) {
+      setReverbAlgoParameters({
+        delayTime1: 0.90,
+        delayTime2: 0.60,
+        allpassFreq1: 777,
+        allpassFreq2: 888,
+        allpassFreq3: 999,
+        allpassFreq4: 666,
+        decayTime: 20.0,
+        damping: 12000,
+        wetDryMix: 0.99
+      });
+    }
+  }, [audioEngineStarted, reverbAlgoNode]);
 
   useEffect(() => {
     console.log('audioEngineStarted', audioEngineStarted);
     if (audioEngineStarted) {
-      // audioWorkletNode.connect(reverbAlgoNode);
+      // audioWorkletNode.connect(reverbNode);
       const audioContextRef = new AudioContext();
       setAudioContext(audioContextRef);
       // audioWorkletNode.connect(audioContextRef.destination);
@@ -115,16 +116,17 @@ function App() {
   useEffect(() => {
     console.log('audioContext', audioContext);
     console.log('audioWorkletNode', audioWorkletNode);
-    if (audioContext && audioWorkletNode) {
-      audioWorkletNode.connect(audioContext.destination);
+    if (audioContext && audioWorkletNode && reverbAlgoNode) {
+      audioWorkletNode.connect(reverbAlgoNode.input);
+      reverbAlgoNode.connect(audioContext.destination);
     }
-  }, [audioContext, audioWorkletNode]);
+  }, [audioContext, audioWorkletNode, reverbAlgoNode]);
 
   // useEffect(() => {
-  //   if (audioEngineStarted && reverbAlgoNode) {
-  //     reverbAlgoNode.connect(audioContext.destination);
+  //   if (audioEngineStarted && reverbNode) {
+  //     reverbNode.connect(audioContext.destination);
   //   }
-  // }, [audioEngineStarted, reverbAlgoNode]);
+  // }, [audioEngineStarted, reverbNode]);
 
   return (
     <>

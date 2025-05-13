@@ -9,12 +9,15 @@
 #include "esp_https_server.h"
 #include "mdns.h"
 #include "cJSON.h"
+#include "esp_timer.h"
 
 static const char *TAG = "web_server";
 static httpd_handle_t server = NULL;
 // static httpd_req_t *ws_req = NULL;
 static httpd_handle_t ws_req_hd = NULL;
 static int ws_req_fd = 0;
+static bool ws_connected = false;  // Add connection state tracking
+static uint32_t last_ws_activity = 0;  // Track last successful WebSocket activity
 
 // WebSocket frame receive buffer
 // #define WS_BUFFER_SIZE 1024
@@ -58,30 +61,37 @@ void start_mdns_service()
 // отправляет буфер с выходными значениями на клиента
 static void send_samples_to_client()
 {
-    // ESP_LOGI(TAG, "Sending samples to client");
+    if (!ws_connected || !ws_req_hd || ws_req_fd <= 0) {
+        ESP_LOGD(TAG, "WebSocket not connected, skipping send");
+        return;
+    }
+
+    // Check if connection is still valid
+    if (httpd_ws_get_fd_info(ws_req_hd, ws_req_fd) != HTTPD_WS_CLIENT_WEBSOCKET) {
+        ESP_LOGD(TAG, "WebSocket connection no longer valid");
+        ws_connected = false;
+        ws_req_hd = NULL;
+        ws_req_fd = 0;
+        return;
+    }
 
     if (!output) {
         ESP_LOGE(TAG, "Output instance not found");
-        // return ESP_FAIL;
+        return;
     }   
 
-    // Check if samples are ready
     if (!output_samples_ready(output)) {
-        ESP_LOGE(TAG, "Samples are not ready");
-        // return ESP_FAIL;
+        ESP_LOGD(TAG, "Samples are not ready");
+        return;
     }   
 
-    // Get samples from output buffer
     int8_t samples[OUTPUT_SAMPLE_BUFFER_SIZE];
     esp_err_t err = output_get_samples(output, samples, OUTPUT_SAMPLE_BUFFER_SIZE);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get samples: %d", err);
-        // return err;
+        return;
     }  
 
-    // ESP_LOGI(TAG, "Samples successfully got: %d", samples[0]);
-
-    // Send samples as binary WebSocket frame
     httpd_ws_frame_t ws_pkt;
     memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
     ws_pkt.type = HTTPD_WS_TYPE_BINARY;
@@ -89,45 +99,76 @@ static void send_samples_to_client()
     ws_pkt.len = OUTPUT_SAMPLE_BUFFER_SIZE;
     ws_pkt.final = true;
 
-    // Send WebSocket frame
     err = httpd_ws_send_frame_async(ws_req_hd, ws_req_fd, &ws_pkt);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to send WebSocket frame: %d", err);   
+        ESP_LOGE(TAG, "Failed to send WebSocket frame: %d", err);
+        if (err == ESP_ERR_HTTPD_INVALID_REQ) {
+            ws_connected = false;
+            ws_req_hd = NULL;
+            ws_req_fd = 0;
+        }
+    } else {
+        last_ws_activity = esp_timer_get_time() / 1000; // Update last activity timestamp
     }
 }
 
 // WebSocket handler
 static esp_err_t ws_handler(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "WebSocket handler called");
     if (req->method == HTTP_GET) {
-        // Upgrade connection to WebSocket
+        // Clean up any existing connection
+        if (ws_connected) {
+            ESP_LOGI(TAG, "Cleaning up existing WebSocket connection");
+            ws_connected = false;
+            ws_req_hd = NULL;
+            ws_req_fd = 0;
+        }
+
         httpd_ws_frame_t ws_pkt;
         memset(&ws_pkt, 0, sizeof(httpd_ws_frame_t));
         ws_pkt.type = HTTPD_WS_TYPE_TEXT;
 
         ws_req_hd = req->handle;
         ws_req_fd = httpd_req_to_sockfd(req);
+        
+        // Verify the connection is valid before marking as connected
+        if (httpd_ws_get_fd_info(ws_req_hd, ws_req_fd) == HTTPD_WS_CLIENT_WEBSOCKET) {
+            ws_connected = true;
+            last_ws_activity = esp_timer_get_time() / 1000;
+            ESP_LOGI(TAG, "Handshake done, the new connection was opened");
 
-        // ESP_LOGI(TAG, "WebSocket request handle: %d", ws_req_handle);
-        ESP_LOGI(TAG, "Handshake done, the new connection was opened");
+            output = output_get_instance();
+            if (!output) {
+                ESP_LOGE(TAG, "Failed to get output instance");
+                ws_connected = false;
+                ws_req_hd = NULL;
+                ws_req_fd = 0;
+                return ESP_FAIL;
+            }
 
-        // Get output instance from output component
-        output = output_get_instance();
-        ESP_LOGI(TAG, "Output instance successfully got");
-
-        // Register callback to send samples to web socket client
-        output_register_buffer_ready_callback(&send_samples_to_client);
-        ESP_LOGI(TAG, "Buffer ready callback registered");
+            output_register_buffer_ready_callback(&send_samples_to_client);
+            ESP_LOGI(TAG, "Buffer ready callback registered");
+        } else {
+            ESP_LOGE(TAG, "Invalid WebSocket connection");
+            ws_req_hd = NULL;
+            ws_req_fd = 0;
+            return ESP_FAIL;
+        }
         
         return ESP_OK;
     }
 
-    ESP_LOGI(TAG, "WebSocket request handle: %d", (int)req->handle);
+    // Handle WebSocket close
+    if (req->method == HTTP_DELETE) {
+        ESP_LOGI(TAG, "WebSocket connection closed");
+        ws_connected = false;
+        ws_req_hd = NULL;
+        ws_req_fd = 0;
+        return ESP_OK;
+    }
 
     return ESP_OK;
 }
-
 
 // Helper function to send file content
 static esp_err_t send_file_content(httpd_req_t *req, const char *file_path)
@@ -360,6 +401,24 @@ httpd_handle_t start_webserver(void)
     return server;
 }
 
+// Add periodic connection check task
+static void check_ws_connection(void *arg)
+{
+    while (1) {
+        if (ws_connected && ws_req_hd && ws_req_fd > 0) {
+            uint32_t current_time = esp_timer_get_time() / 1000;
+            // If no activity for more than 5 seconds, consider connection dead
+            if (current_time - last_ws_activity > 5000) {
+                ESP_LOGI(TAG, "WebSocket connection timeout");
+                ws_connected = false;
+                ws_req_hd = NULL;
+                ws_req_fd = 0;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Check every second
+    }
+}
+
 // Initialize and start web server
 esp_err_t web_server_init(void)
 {
@@ -383,6 +442,9 @@ esp_err_t web_server_init(void)
         ESP_LOGE(TAG, "Failed to start web server");
         return ESP_FAIL;
     }
+
+    // Create task to check WebSocket connection
+    xTaskCreate(check_ws_connection, "ws_check", 2048, NULL, 5, NULL);
 
     return ESP_OK;
 }

@@ -1,6 +1,6 @@
 // Web Audio API
 // make room reverb using two delay nodes
-// after each delay node add allpass filters
+// after each delay node add allpass filters using BiquadFilterNode
 // summ allpass filters outputs
 // add lowpass filter to summ output
 // add feedback to input of reverb
@@ -15,14 +15,14 @@ class ReverbProcessor extends AudioWorkletProcessor {
         this.delayIndex1 = 0;
         this.delayIndex2 = 0;
         
-        // Initialize allpass filter states
-        this.allpass1 = { x1: 0, y1: 0 };
-        this.allpass2 = { x1: 0, y1: 0 };
-        this.allpass3 = { x1: 0, y1: 0 };
-        this.allpass4 = { x1: 0, y1: 0 };
-        
-        // Initialize lowpass filter state
-        this.lowpass = { y1: 0 };
+        // Initialize filter states
+        this.filterStates = {
+            allpass1: { x1: 0, y1: 0 },
+            allpass2: { x1: 0, y1: 0 },
+            allpass3: { x1: 0, y1: 0 },
+            allpass4: { x1: 0, y1: 0 },
+            lowpass: { x1: 0, y1: 0 }
+        };
         
         // Default parameters
         this.parameters = {
@@ -40,55 +40,14 @@ class ReverbProcessor extends AudioWorkletProcessor {
         this.delaySize1 = Math.floor(this.parameters.delayTime1 * sampleRate);
         this.delaySize2 = Math.floor(this.parameters.delayTime2 * sampleRate);
         
-        // Calculate filter coefficients
-        this.updateFilterCoefficients();
-        
         // Handle parameter updates from main thread
         this.port.onmessage = (event) => {
             if (event.data.type === 'parameters') {
                 this.parameters = { ...this.parameters, ...event.data.parameters };
-                this.updateFilterCoefficients();
                 this.delaySize1 = Math.floor(this.parameters.delayTime1 * sampleRate);
                 this.delaySize2 = Math.floor(this.parameters.delayTime2 * sampleRate);
             }
         };
-    }
-    
-    updateFilterCoefficients() {
-        // Calculate allpass filter coefficients
-        this.allpassCoeffs = [
-            this.calculateAllpassCoeff(this.parameters.allpassFreq1),
-            this.calculateAllpassCoeff(this.parameters.allpassFreq2),
-            this.calculateAllpassCoeff(this.parameters.allpassFreq3),
-            this.calculateAllpassCoeff(this.parameters.allpassFreq4)
-        ];
-        
-        // Calculate lowpass filter coefficient
-        this.lowpassCoeff = this.calculateLowpassCoeff(this.parameters.lowpassFreq);
-    }
-    
-    calculateAllpassCoeff(frequency) {
-        const w0 = 2 * Math.PI * frequency / sampleRate;
-        const alpha = Math.sin(w0) / (2 * Math.cos(w0));
-        return (1 - alpha) / (1 + alpha);
-    }
-    
-    calculateLowpassCoeff(frequency) {
-        const w0 = 2 * Math.PI * frequency / sampleRate;
-        return Math.exp(-w0);
-    }
-    
-    processAllpass(input, coeff, state) {
-        const output = coeff * input + state.x1 - coeff * state.y1;
-        state.x1 = input;
-        state.y1 = output;
-        return output;
-    }
-    
-    processLowpass(input, state) {
-        const output = this.lowpassCoeff * state.y1 + (1 - this.lowpassCoeff) * input;
-        state.y1 = output;
-        return output;
     }
     
     process(inputs, outputs, parameters) {
@@ -113,16 +72,16 @@ class ReverbProcessor extends AudioWorkletProcessor {
                 this.delayIndex2 = (this.delayIndex2 + 1) % this.delaySize2;
                 
                 // Process through allpass filters
-                const allpassOut1 = this.processAllpass(delayed1, this.allpassCoeffs[0], this.allpass1);
-                const allpassOut2 = this.processAllpass(delayed2, this.allpassCoeffs[1], this.allpass2);
-                const allpassOut3 = this.processAllpass(allpassOut1, this.allpassCoeffs[2], this.allpass3);
-                const allpassOut4 = this.processAllpass(allpassOut2, this.allpassCoeffs[3], this.allpass4);
+                const allpassOut1 = this.processAllpass(delayed1, this.parameters.allpassFreq1, this.filterStates.allpass1);
+                const allpassOut2 = this.processAllpass(delayed2, this.parameters.allpassFreq2, this.filterStates.allpass2);
+                const allpassOut3 = this.processAllpass(allpassOut1, this.parameters.allpassFreq3, this.filterStates.allpass3);
+                const allpassOut4 = this.processAllpass(allpassOut2, this.parameters.allpassFreq4, this.filterStates.allpass4);
                 
                 // Sum allpass outputs
                 const summed = allpassOut3 + allpassOut4;
                 
                 // Process through lowpass filter
-                const lowpassed = this.processLowpass(summed, this.lowpass);
+                const lowpassed = this.processLowpass(summed, this.parameters.lowpassFreq, this.filterStates.lowpass);
                 
                 // Apply feedback
                 const feedback = lowpassed * this.parameters.feedbackGain;
@@ -144,12 +103,32 @@ class ReverbWorklet {
     constructor(audioContext) {
         this.context = audioContext;
         this.node = null;
+        this.filters = {
+            allpass1: this.context.createBiquadFilter(),
+            allpass2: this.context.createBiquadFilter(),
+            allpass3: this.context.createBiquadFilter(),
+            allpass4: this.context.createBiquadFilter(),
+            lowpass: this.context.createBiquadFilter()
+        };
         this.init();
     }
     
     async init() {
         await this.context.audioWorklet.addModule('audio-effects.js');
         this.node = new AudioWorkletNode(this.context, 'reverb-processor');
+        
+        // Configure filters
+        this.filters.allpass1.type = 'allpass';
+        this.filters.allpass2.type = 'allpass';
+        this.filters.allpass3.type = 'allpass';
+        this.filters.allpass4.type = 'allpass';
+        this.filters.lowpass.type = 'lowpass';
+        
+        // Connect filters in series
+        this.filters.allpass1.connect(this.filters.allpass3);
+        this.filters.allpass2.connect(this.filters.allpass4);
+        this.filters.allpass3.connect(this.filters.lowpass);
+        this.filters.allpass4.connect(this.filters.lowpass);
     }
     
     setParameters(params) {
@@ -158,12 +137,21 @@ class ReverbWorklet {
                 type: 'parameters',
                 parameters: params
             });
+            
+            // Update filter parameters
+            if (params.allpassFreq1) this.filters.allpass1.frequency.value = params.allpassFreq1;
+            if (params.allpassFreq2) this.filters.allpass2.frequency.value = params.allpassFreq2;
+            if (params.allpassFreq3) this.filters.allpass3.frequency.value = params.allpassFreq3;
+            if (params.allpassFreq4) this.filters.allpass4.frequency.value = params.allpassFreq4;
+            if (params.lowpassFreq) this.filters.lowpass.frequency.value = params.lowpassFreq;
         }
     }
     
     connect(source) {
         if (this.node) {
-            source.connect(this.node);
+            source.connect(this.filters.allpass1);
+            source.connect(this.filters.allpass2);
+            this.filters.lowpass.connect(this.node);
             return this.node;
         }
         return null;
@@ -172,6 +160,7 @@ class ReverbWorklet {
     disconnect() {
         if (this.node) {
             this.node.disconnect();
+            Object.values(this.filters).forEach(filter => filter.disconnect());
         }
     }
 }
