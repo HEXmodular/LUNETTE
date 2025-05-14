@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './round-slider-control.css';
 
 interface RoundSliderControlProps {
@@ -6,8 +6,9 @@ interface RoundSliderControlProps {
     onChange: (value: number) => void;
     min?: number;
     max?: number;
-    // initialValue?: number;
     forceOpen?: boolean;
+    formatValue?: (value: number) => string | number;
+    disabled?: boolean;
 }
 
 export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
@@ -15,13 +16,15 @@ export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
     onChange,
     min = 0,
     max = 100,
-    // initialValue = 50,
     forceOpen = false,
+    formatValue = (value) => Math.round(value),
+    disabled = false,
 }) => {
     const [isActive, setIsActive] = useState(forceOpen);
     const [currentValue, setCurrentValue] = useState(value);
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
     const [isOverHandle, setIsOverHandle] = useState(false);
+    const [isDisabled, setIsDisabled] = useState(disabled);
     const pressTimer = useRef<number | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -31,6 +34,10 @@ export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
     useEffect(() => {
         setCurrentValue(value);
     }, [value]);
+
+    useEffect(() => {
+        setIsDisabled(disabled);
+    }, [disabled]);
 
     const updateButtonPosition = (clientX: number, clientY: number) => {
         if (containerRef.current) {
@@ -92,7 +99,9 @@ export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
         };
     }, [isActive, max, min, onChange, currentValue]);
 
-    const handlePressStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        if (isDisabled) return;
+        
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
@@ -107,10 +116,11 @@ export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
         }
 
         pressTimer.current = window.setTimeout(() => {
+            if (isDisabled) return;
             setIsActive(true);
             updateButtonPosition(clientX, clientY);
         }, 500);
-    };
+    }, [isDisabled]);
 
     const handlePressEnd = () => {
         if (pressTimer.current) {
@@ -154,24 +164,25 @@ export const RoundSliderControl: React.FC<RoundSliderControlProps> = ({
         <>
             <button
                 ref={buttonRef}
-                className={`slider-button ${isActive ? 'active' : ''} ${isOverHandle ? 'over-handle' : ''}`}
+                className={`slider-button ${isActive ? 'active' : ''} ${isOverHandle ? 'over-handle' : ''} ${disabled ? 'disabled' : ''}`}
                 style={buttonStyle}
                 onMouseDown={handlePressStart}
                 onMouseUp={handlePressEnd}
                 onMouseLeave={handlePressEnd}
                 onTouchStart={handlePressStart}
                 onTouchEnd={handlePressEnd}
+                disabled={disabled}
             >
-                {Math.round(currentValue)}
+                {formatValue(currentValue)}
             </button>
 
-            <div className={`overlay ${isActive ? 'visible' : ''}`}>
+            <div className={`overlay ${isActive ? 'visible' : ''} ${disabled ? 'disabled' : ''}`}>
                 <div
                     ref={containerRef}
                     className="slider-container"
                 >
                     <div className="slider-track" >
-                    {Math.round(currentValue)} 
+                    {formatValue(currentValue)} 
                     </div>
                     <div className={`slider-handle ${isOverHandle ? 'over-handle' : ''}`} style={handleStyle}>
                     </div>

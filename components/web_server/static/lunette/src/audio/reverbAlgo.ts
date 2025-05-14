@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 
-interface ReverbParameters {
+export interface ReverbParameters {
     delayTime1: number;
     delayTime2: number;
     allpassFreq1: number;
     allpassFreq2: number;
     allpassFreq3: number;
     allpassFreq4: number;
-    decayTime: number;
+    // decayTime: number;
+    feedbackGain: number;
     damping: number;
     wetDryMix: number;
 }
@@ -50,13 +51,13 @@ class AlgorithmicReverb {
 
         // Соединяем входной узел с разветвлением на сухой и влажный сигналы
         this.inputNode.connect(this.dryGainNode); // Сухой сигнал идет напрямую к выходу
-        this.inputNode.connect(this.wetGainNode); // Влажный сигнал идет на обработку
+
 
         // 2. Создаем внутренние узлы для алгоритма реверберации
         // (Пример простой схемы: вход -> влажный гейн -> задержка1 -> фильтр -> гейн обратной связи -> задержка2 -> гейн обратной связи -> ... -> гейн обратной связи -> влажный гейн -> выход)
         // Здесь очень упрощенная схема только для демонстрации связей
-        this.delayNode1 = this.context.createDelay();
-        this.delayNode2 = this.context.createDelay();
+        this.delayNode1 = this.context.createDelay(10);
+        this.delayNode2 = this.context.createDelay(10);
         this.filterNode = this.context.createBiquadFilter();
         this.filterNode.type = 'lowpass'; // Фильтр для демпфирования
 
@@ -71,6 +72,9 @@ class AlgorithmicReverb {
         this.allpassFilter4.type = 'allpass';
 
         this.feedbackGainNode = this.context.createGain(); // Гейн для обратной связи
+        this.feedbackGainNode.gain.setValueAtTime(0.99, this.context.currentTime);
+
+        this.inputNode.connect(this.feedbackGainNode); // Влажный сигнал идет на обработку
 
         // 3. Соединяем внутренние узлы в соответствии с алгоритмом
         // Очень упрощенный пример обратной связи
@@ -93,14 +97,15 @@ class AlgorithmicReverb {
         // 4. Соединяем сухой и влажный сигналы на выходном узле
         this.dryGainNode.connect(this.outputNode);
         this.wetGainNode.connect(this.outputNode);
+        // this.filterNode.connect(this.outputNode);
 
 
         // 5. Применяем начальные параметры из options
-        if (options?.decayTime !== undefined) {
-             this.setDecayTime(options.decayTime);
-        } else {
-             this.setDecayTime(this._decayTime); // Применить значение по умолчанию
-        }
+        // if (options?.decayTime !== undefined) {
+        //      this.setDecayTime(options.decayTime);
+        // } else {
+        //      this.setDecayTime(this._decayTime); // Применить значение по умолчанию
+        // }
 
         if (options?.damping !== undefined) {
             this.setDamping(options.damping);
@@ -116,13 +121,14 @@ class AlgorithmicReverb {
 
         // Установите начальные значения задержек (это критично для алгоритма)
         // Эти значения зависят от конкретного алгоритма реверберации
-        this.delayNode1.delayTime.setValueAtTime(0.050, this.context.currentTime); // 50 ms
-        this.delayNode2.delayTime.setValueAtTime(0.070, this.context.currentTime); // 70 ms
+        this.delayNode1.delayTime.setValueAtTime(2, this.context.currentTime); // 50 ms
+        this.delayNode2.delayTime.setValueAtTime(3, this.context.currentTime); // 70 ms
          // ... установите другие времена задержек
     }
 
     // 6. Методы для подключения/отключения обертки в общий аудиограф
     connect(destination: AudioNode): this {
+        console.log('ReverbAlgo connect', destination);
         this.outputNode.connect(destination);
         return this;
     }
@@ -150,6 +156,14 @@ class AlgorithmicReverb {
         const totalLoopDelay = this.delayNode1.delayTime.value + this.delayNode2.delayTime.value;
         const feedbackGain = Math.pow(0.001, (totalLoopDelay / seconds));
         this.feedbackGainNode.gain.setValueAtTime(feedbackGain, this.context.currentTime);
+    }
+
+    setFeedbackGain(gain: number): void {
+        this.feedbackGainNode.gain.setValueAtTime(gain, this.context.currentTime);
+    }
+
+    getFeedbackGain(): number {
+        return this.feedbackGainNode.gain.value;
     }
 
     getDecayTime(): number {
@@ -206,7 +220,8 @@ class AlgorithmicReverb {
         this.setAllpassFreq2(params.allpassFreq2);
         this.setAllpassFreq3(params.allpassFreq3);
         this.setAllpassFreq4(params.allpassFreq4);
-        this.setDecayTime(params.decayTime);
+        // this.setDecayTime(params.decayTime);
+        this.setFeedbackGain(params.feedbackGain);
         this.setDamping(params.damping);
         this.setWetDryMix(params.wetDryMix);
     }

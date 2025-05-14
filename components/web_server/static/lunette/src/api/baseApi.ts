@@ -1,5 +1,5 @@
 export class BaseApi {
-    private static baseUrl = '/api';
+    private static baseUrl = import.meta.env.DEV ? 'https://lunette.local/api' : '/api';
 
     static async post<T>(endpoint: string, data: any): Promise<T> {
         const response = await fetch(`${this.baseUrl}/${endpoint}`, {

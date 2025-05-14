@@ -94,3 +94,14 @@
 .slider-button.over-handle:hover {
   background: #218838;
 }
+
+.slider-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.overlay.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+}
