@@ -35,9 +35,9 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
         allpassFreq3: 999,
         allpassFreq4: 666,
         // decayTime: 20.0,
-        feedbackGain: 0.99,
-        damping: 12000,
-        wetDryMix: 0.99
+        feedbackGain: 0.4,
+        lowpassFreq: 4000,
+        wetDryMix: 0.5
     });
 
     // const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(null);
@@ -50,7 +50,8 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
 
     return (
         <div className="effects-screen">
-            <div className="reverb-section">
+
+            <div className="content-block">
                 <h3>Reverb</h3>
                 <div className="reverb-controls">
                     <div className="reverb-control-row cols-2">
@@ -58,13 +59,16 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             label="Delay Time"
                             min={0.01}
                             max={10.0}
+                            sensitivity={0.01}
                             formatValue={(value) => value.toFixed(2)}
                             value={reverbParams.delayTime1}
                             onChange={(value) => handleParamChange('delayTime1', value)}
                         />
                         <ValueControl
+                            label="&nbsp;"
                             min={0.01}
                             max={10.0}
+                            sensitivity={0.01}
                             formatValue={(value) => value.toFixed(2)}
                             value={reverbParams.delayTime2}
                             onChange={(value) => handleParamChange('delayTime2', value)}
@@ -74,14 +78,17 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                     <div className="reverb-control-row cols-2">
                         <ValueControl
                             label="Allpass Freq"
-                            min={500}
-                            max={5000}
+                            min={100}
+                            max={8000}
+                            sensitivity={20.0}
                             value={reverbParams.allpassFreq1}
                             onChange={(value) => handleParamChange('allpassFreq1', value)}
-                        />
+                        />  
                         <ValueControl
-                            min={500}
-                            max={5000}
+                            label="&nbsp;"
+                            min={100}
+                            max={8000}
+                            sensitivity={20.0}
                             value={reverbParams.allpassFreq2}
                             onChange={(value) => handleParamChange('allpassFreq2', value)}
                         />
@@ -89,14 +96,16 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
 
                     <div className="reverb-control-row cols-2">
                         <ValueControl
-                            min={500}
-                            max={5000}
+                            min={100}
+                            max={8000}
+                            sensitivity={20.0}
                             value={reverbParams.allpassFreq3}
                             onChange={(value) => handleParamChange('allpassFreq3', value)}
                         />
                         <ValueControl
-                            min={500}
-                            max={5000}
+                            min={100}
+                            max={8000}
+                            sensitivity={20.0}
                             value={reverbParams.allpassFreq4}
                             onChange={(value) => handleParamChange('allpassFreq4', value)}
                         />
@@ -120,11 +129,12 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             onChange={(value) => handleParamChange('feedbackGain', value)}
                         />
                         <ValueControl
-                            label="Damping"
-                            min={1000}
+                            label="Lowpass Freq"
+                            min={20}
                             max={20000}
-                            value={reverbParams.damping}
-                            onChange={(value) => handleParamChange('damping', value)}
+                            sensitivity={20.0}
+                            value={reverbParams.lowpassFreq}
+                            onChange={(value) => handleParamChange('lowpassFreq', value)}
                         />
                     </div>
 
@@ -133,12 +143,16 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                         label="Wet/Dry Mix"
                         min={0}
                         max={1}
+                        sensitivity={0.01}
                         formatValue={(value) => value.toFixed(2)}
                         value={reverbParams.wetDryMix}
                         onChange={(value) => handleParamChange('wetDryMix', value)}
                     />
                 </div>
             </div>
+            <div id="debug-log" className="debug-log" style={{color: 'black'}}>
+                
+                </div>
         </div>
     );
 };

@@ -5,6 +5,7 @@ import MixerBlock from '@controls/mixer-block/mixer-block'
 import useLogicBlockApi, { type LogicBlockConfig } from '@api/logicBlockApi'
 import type { OscillatorConfig } from '@api/oscillatorApi'
 import useOscillatorApi from '@api/oscillatorApi'
+import './main-screen.css'
 
 interface MainScreenProps {
   audioEngineStarted: boolean;
@@ -82,7 +83,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ audioEngineStarted }) => {
       </div>
 
       <div className="content-block">
-        <div className="cols-2">
+        <div className="cols-2 block-container">
           <AlgorithmBlock title="LOP 1" id={0} onBlockChange={setValueBlock}
             disabled={!audioEngineStarted}
             config={logicBlocks[0]}
@@ -92,7 +93,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ audioEngineStarted }) => {
             config={logicBlocks[1]}
           />
         </div>
-        <div className="cols-2">
+        <div className="cols-2 block-container">
           <AlgorithmBlock title="LOP 3" id={2} onBlockChange={setValueBlock}
             disabled={!audioEngineStarted}
             config={logicBlocks[2]}

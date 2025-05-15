@@ -19,7 +19,6 @@ interface Position {
 }
 
 type ReactPointerEvent = React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLElement>;
-type NativePointerEvent = MouseEvent | TouchEvent;
 
 const ValueControl: React.FC<ValueControlProps> = ({
     min = 0,
@@ -124,39 +123,39 @@ const ValueControl: React.FC<ValueControlProps> = ({
         };
     };
 
-    const getNativeEventPosition = (e: NativePointerEvent): Position => {
-        if ('touches' in e) {
-            return {
-                x: e.touches[0].clientX,
-                y: e.touches[0].clientY
-            };
-        }
-        return {
-            x: e.clientX,
-            y: e.clientY
-        };
-    };
+    // const logDebug = (message: string) => {
+    //     const debugLog = document.getElementById('debug-log');
+    //     if (debugLog) {
+    //         debugLog.textContent += message + "\n";
+    //     }
+    // };  
 
     const handlePointerStart = (e: ReactPointerEvent) => {
-        e.preventDefault();
+        // e.preventDefault();
         console.log("ValueControl handlePointerStart")
+        // logDebug("ValueControl handlePointerStart")
+        
         const pos = getEventPosition(e);
         
         isTimerCancelled.current = false;
         longPressTimer.current = window.setTimeout(() => {
             if (!isTimerCancelled.current) {
                 // console.log("ValueControl longPressTimer")
+                // logDebug("ValueControl longPressTimer")
                 const pos = getEventPosition(e);
                 setIsActive(true);
                 updateButtonPosition(pos.x, pos.y);
             }
-        }, 750);
+        }, 500);
 
         startYRef.current = pos.y;
         lastYRef.current = pos.y;
     };
 
     const handlePointerMove = (e: ReactPointerEvent) => {
+        // e.preventDefault();
+        // logDebug("ValueControl handlePointerMove")
+
         e.preventDefault();
         const pos = getEventPosition(e);
         
@@ -168,21 +167,27 @@ const ValueControl: React.FC<ValueControlProps> = ({
             const speed = (Math.abs(deltaY) / 20) * sensitivity;
             const change = deltaY > 0 ? -speed : speed;
             const newValue = currentValue + change;
-            updateValue(newValue);
-            if (longPressTimer.current) {
+            const absChange = Math.abs(newValue-currentValue);
+            if (absChange >= sensitivity) {
+                console.log("ValueControl handlePointerMove absChange > sensitivity")
+                // logDebug("ValueControl handlePointerMove absChange > sensitivity")
+            }
+            if ((absChange >= sensitivity) && (longPressTimer.current)) {
                 console.log("ValueControl handlePointerMove clearTimeout")
+                // logDebug("ValueControl handlePointerMove clearTimeout")
                 isTimerCancelled.current = true;
                 clearTimeout(longPressTimer.current);
                 longPressTimer.current = null;
             }
+            updateValue(newValue);
         }
     };
 
 
-    const handlePointerEnd = useCallback((e: ReactPointerEvent) => {
-        e.preventDefault();
+    const handlePointerEnd = useCallback(() => {
+        // e.preventDefault();
         // console.log("ValueControl handleReactPointerEnd")
-
+        // logDebug("ValueControl handlePointerEnd")
         if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;

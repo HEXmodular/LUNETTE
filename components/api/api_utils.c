@@ -17,6 +17,9 @@ esp_err_t send_json_response(httpd_req_t *req, cJSON *json) {
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_set_hdr(req, "Cache-Control", "no-cache, no-store, must-revalidate");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type, Authorization");
     
     esp_err_t err = httpd_resp_send(req, response, strlen(response));
     free(response);
@@ -25,6 +28,10 @@ esp_err_t send_json_response(httpd_req_t *req, cJSON *json) {
 }
 
 esp_err_t send_error_response(httpd_req_t *req, int status_code, const char* message) {
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type, Authorization");
+    
     cJSON *error = cJSON_CreateObject();
     cJSON_AddStringToObject(error, "error", message);
     

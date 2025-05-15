@@ -241,6 +241,9 @@ static esp_err_t root_handler(httpd_req_t *req)
     // Set response headers
     httpd_resp_set_type(req, "text/html");
     httpd_resp_set_hdr(req, "Cache-Control", "no-cache, no-store, must-revalidate");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type, Authorization");
     
     // Send index.html
     ESP_LOGD(TAG, "Sending index.html");
@@ -277,6 +280,9 @@ static esp_err_t static_handler(httpd_req_t *req)
     // Set response headers
     httpd_resp_set_type(req, content_type);
     httpd_resp_set_hdr(req, "Cache-Control", "public, max-age=31536000");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type, Authorization");
 
     // Send file
     ESP_LOGD(TAG, "Sending file: %s", file_path);

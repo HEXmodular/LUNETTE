@@ -1,15 +1,25 @@
 /* LogicBlockControl styles */
+/* .logic-block-control {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    font-size: 16px;
+} */
+
 .logic-block-btn {
     background: #eee;
     color: #555;
     border: 0;
-    font-size: 16px;
+    /* font-size: 16px; */
     font-weight: 600;
     padding: 14px 0;
     cursor: pointer;
     transition: all 0.2s;
     user-select: none;
+    min-width: 100%;
+    font-size: inherit;
 }
+
 .logic-block-btn.active {
     background: #4CAF50;
     color: #fff;
@@ -19,3 +29,4 @@
 .logic-block-btn:active {
     filter: brightness(0.95);
 }
+

@@ -16,24 +16,24 @@ function App() {
   const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(audioContext);
 
   // для отладки загрузка аудио из файла с интернета
-  const loadAudioFile = async (url: string) => {
-    if (!audioContext) return;
+  // const loadAudioFile = async (url: string) => {
+  //   if (!audioContext) return;
     
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  //   try {
+  //     const response = await fetch(url);
+  //     const arrayBuffer = await response.arrayBuffer();
+  //     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      if (reverbAlgoNode) {
-        source.connect(reverbAlgoNode.input);
-      }
-      source.start(0);
-    } catch (error) {
-      console.error('Error loading audio file:', error);
-    }
-  };
+  //     const source = audioContext.createBufferSource();
+  //     source.buffer = audioBuffer;
+  //     if (reverbAlgoNode) {
+  //       source.connect(reverbAlgoNode.input);
+  //     }
+  //     source.start(0);
+  //   } catch (error) {
+  //     console.error('Error loading audio file:', error);
+  //   }
+  // };
 
   useEffect(() => {
     console.log('audioEngineStarted', audioEngineStarted);
@@ -49,6 +49,8 @@ function App() {
     if (audioContext && audioWorkletNode && reverbAlgoNode) {
       audioWorkletNode.connect(reverbAlgoNode.input);
       reverbAlgoNode.connect(audioContext.destination);
+
+      // audioWorkletNode.connect(audioContext.destination);
     }
   }, [audioContext, audioWorkletNode, reverbAlgoNode]);
 
@@ -58,11 +60,11 @@ function App() {
         {!audioEngineStarted && <button onClick={() => {
           setAudioEngineStarted(true);
         }}>START AUDIO ENGINE</button>}
-        {audioEngineStarted && (
+        {/* {audioEngineStarted && (
           <button onClick={() => loadAudioFile('https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg.wav')}>
             Load Test Audio
           </button>
-        )}
+        )} */}
       </div>
       <SwipeScreensControl onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
         <MainScreen audioEngineStarted={audioEngineStarted} />

@@ -9,7 +9,8 @@ export interface ReverbParameters {
     allpassFreq4: number;
     // decayTime: number;
     feedbackGain: number;
-    damping: number;
+    // damping: number;
+    lowpassFreq: number;
     wetDryMix: number;
 }
 
@@ -32,10 +33,10 @@ class AlgorithmicReverb {
     private allpassFilter2: BiquadFilterNode;
     private allpassFilter3: BiquadFilterNode;
     private allpassFilter4: BiquadFilterNode;
-
+    private channelMerger: ChannelMergerNode;
     // Параметры ревербератора
     private _decayTime: number = 2.0; // Время затухания по умолчанию
-    private _dampingFrequency: number = 8000; // Частота демпфирования по умолчанию
+    private _lowpassFreq: number = 8000; // Частота демпфирования по умолчанию
     private _wetDryMix: number = 0.5; // Соотношение влажный/сухой сигнал
 
     constructor(context: AudioContext, options?: { decayTime?: number, damping?: number, wetDryMix?: number }) {
@@ -49,8 +50,8 @@ class AlgorithmicReverb {
         this.dryGainNode = this.context.createGain();
         this.wetGainNode = this.context.createGain();
 
-        // Соединяем входной узел с разветвлением на сухой и влажный сигналы
-        this.inputNode.connect(this.dryGainNode); // Сухой сигнал идет напрямую к выходу
+        // Соединяем входной узел на выход сухого сигнала
+        this.inputNode.connect(this.dryGainNode); 
 
 
         // 2. Создаем внутренние узлы для алгоритма реверберации
@@ -74,7 +75,10 @@ class AlgorithmicReverb {
         this.feedbackGainNode = this.context.createGain(); // Гейн для обратной связи
         this.feedbackGainNode.gain.setValueAtTime(0.99, this.context.currentTime);
 
-        this.inputNode.connect(this.feedbackGainNode); // Влажный сигнал идет на обработку
+        this.channelMerger = this.context.createChannelMerger(2);
+
+        this.inputNode.connect(this.wetGainNode); 
+        this.wetGainNode.connect(this.feedbackGainNode);
 
         // 3. Соединяем внутренние узлы в соответствии с алгоритмом
         // Очень упрощенный пример обратной связи
@@ -92,11 +96,15 @@ class AlgorithmicReverb {
         this.filterNode.connect(this.feedbackGainNode);
 
         // Соединяем обработанный (влажный) сигнал с выходом обертки
-        this.filterNode.connect(this.wetGainNode);
+        this.filterNode.connect(this.outputNode);
+        this.delayNode1.connect(this.channelMerger, 0, 0);
+        this.delayNode2.connect(this.channelMerger, 0, 1);
+
+        this.dryGainNode.connect(this.outputNode);
 
         // 4. Соединяем сухой и влажный сигналы на выходном узле
-        this.dryGainNode.connect(this.outputNode);
-        this.wetGainNode.connect(this.outputNode);
+        // this.dryGainNode.connect(this.outputNode);
+        // this.wetGainNode.connect(this.outputNode);
         // this.filterNode.connect(this.outputNode);
 
 
@@ -107,11 +115,11 @@ class AlgorithmicReverb {
         //      this.setDecayTime(this._decayTime); // Применить значение по умолчанию
         // }
 
-        if (options?.damping !== undefined) {
-            this.setDamping(options.damping);
-        } else {
-            this.setDamping(this._dampingFrequency); // Применить значение по умолчанию
-        }
+        // if (options?.damping !== undefined) {
+        //     this.setDamping(options.damping);
+        // } else {
+        //     this.setDamping(this._dampingFrequency); // Применить значение по умолчанию
+        // }
 
          if (options?.wetDryMix !== undefined) {
             this.setWetDryMix(options.wetDryMix);
@@ -170,13 +178,13 @@ class AlgorithmicReverb {
         return this._decayTime;
     }
 
-    setDamping(frequency: number): void {
-        this._dampingFrequency = frequency;
+    setLowpassFreq(frequency: number): void {
+        this._lowpassFreq = frequency;
         this.filterNode.frequency.setValueAtTime(frequency, this.context.currentTime);
     }
 
-    getDamping(): number {
-        return this._dampingFrequency;
+    getLowpassFreq(): number {
+        return this._lowpassFreq;
     }
 
     setWetDryMix(value: number): void {
@@ -222,7 +230,8 @@ class AlgorithmicReverb {
         this.setAllpassFreq4(params.allpassFreq4);
         // this.setDecayTime(params.decayTime);
         this.setFeedbackGain(params.feedbackGain);
-        this.setDamping(params.damping);
+        // this.setDamping(params.damping);
+        this.setLowpassFreq(params.lowpassFreq);
         this.setWetDryMix(params.wetDryMix);
     }
 

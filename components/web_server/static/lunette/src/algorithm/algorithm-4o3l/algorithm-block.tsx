@@ -128,6 +128,7 @@ const AlgorithmBlock: React.FC<AlgorithmBlockProps> = ({
                         labels={logicBlockTypes}
                         mode="single"
                         value={blockType}
+                        fontSize={12}
                         onChange={onBlockTypeChange}
                         disabled={disabledState}
                     />

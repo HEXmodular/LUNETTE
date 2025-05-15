@@ -8,6 +8,7 @@ interface SelectControlProps {
     mode?: 'multiple' | 'single';
     value?: number;
     values?: number[];
+    fontSize?: number;
     disabled?: boolean;
     onChange: (id: string, index: number, value: boolean, values?: boolean[]) => void;
 }
@@ -19,6 +20,7 @@ export const SelectControl: React.FC<SelectControlProps> = ({
     mode = 'multiple',
     value,
     values,
+    fontSize = 16,
     disabled,
     onChange,
 }) => {
@@ -77,7 +79,8 @@ export const SelectControl: React.FC<SelectControlProps> = ({
             style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                gap: '2px'
+                gap: '2px',
+                fontSize: `${fontSize}px`
             }}
         >
             {labels.map((label, index) => (
