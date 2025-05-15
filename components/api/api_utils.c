@@ -74,4 +74,15 @@ esp_err_t parse_json_body(httpd_req_t *req, cJSON **json) {
     }
 
     return ESP_OK;
+}
+
+esp_err_t api_options_handler(httpd_req_t *req)
+{
+    ESP_LOGD(TAG, "OPTIONS %s", req->uri);
+    
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Headers", "Content-Type");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
 } 

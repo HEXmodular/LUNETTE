@@ -5,7 +5,8 @@ import type { LogicBlockConfig } from '@api/logicBlockApi';
 import './algorithm-block.css';
 
 const logicBlockTypes = ['AND', 'NAND', 'OR', 'NOR', 'XOR', 'XNOR', 'OFF'];
-const serverLogicBlockTypes = ['LOGICAL_OP_AND', 'LOGICAL_OP_NAND', 'LOGICAL_OP_OR', 'LOGICAL_OP_NOR', 'LOGICAL_OP_XOR', 'LOGICAL_OP_XNOR', 'LOGICAL_OP_OFF'];
+const serverLogicBlockTypes = [
+    'LOGICAL_OP_AND', 'LOGICAL_OP_NAND', 'LOGICAL_OP_OR', 'LOGICAL_OP_NOR', 'LOGICAL_OP_XOR', 'LOGICAL_OP_XNOR', 'LOGICAL_OP_OFF'];
 const logicConnectionsTypes = ['1', '2', '3', '4', 'L1', 'L2', 'L3', 'OFF'];
 
 interface AlgorithmBlockProps {
@@ -23,45 +24,27 @@ const AlgorithmBlock: React.FC<AlgorithmBlockProps> = ({
     disabled,
     onBlockChange,
 }) => {
-    const [blockType, setBlockType] = useState<number>(0);
-    const [input1Id, setInput1Id] = useState<number>(0);
-    const [input2Id, setInput2Id] = useState<number>(0);
-    const [input1Type, setInput1Type] = useState<string>(config?.input1_type || '');
-    const [input2Type, setInput2Type] = useState<string>(config?.input2_type || '');
-    const [disabledState, setDisabledState] = useState<boolean>(disabled || false);
+    const [blockType, setBlockType] = useState<number | undefined>();
+    const [input1Id, setInput1Id] = useState<number | undefined>();
+    const [input2Id, setInput2Id] = useState<number | undefined>();
 
-    useEffect(() => {
-        setDisabledState(disabled || false);
-    }, [disabled]);
 
-    useEffect(() => {
-        if (!config) {
-            return;
-        }
-
-        const input1Value = config?.input1_id;
-        const input2Value = config?.input2_id;
-        const blockTypeValue = serverLogicBlockTypes.indexOf(config?.operation_type || serverLogicBlockTypes[0]);
-
-        setBlockType(blockTypeValue);
-        setInput1Id(input1Value);
-        setInput2Id(input2Value);
-        setInput1Type(config?.input1_type);
-        setInput2Type(config?.input2_type);
-    }, [config]);
+    const getBlockTypeValue = () => {
+        return serverLogicBlockTypes.indexOf(config?.operation_type || serverLogicBlockTypes[0]);
+    }
 
     useEffect(() => {
         handleChange();
-    }, [input1Id, input2Id, blockType, input1Type, input2Type]);
+    }, [input1Id, input2Id, blockType]);
 
     const handleChange = () => {
         const data = {
             logic_block_id: id,
-            operation_type: serverLogicBlockTypes[blockType],
-            input1_id: input1Id,
-            input1_type: input1Type,
-            input2_id: input2Id,
-            input2_type: input2Type
+            operation_type: blockType !== undefined ? serverLogicBlockTypes[blockType] : (config?.operation_type || serverLogicBlockTypes[0]),
+            input1_id: input1Id !== undefined ? input1Id : (config?.input1_id || 0),
+            input1_type: config?.input1_type || logicConnectionsTypes[0],
+            input2_id: input2Id !== undefined ? input2Id : (config?.input2_id || 0),
+            input2_type: config?.input2_type || logicConnectionsTypes[0]
         }
 
         if (!disabled) {
@@ -99,9 +82,9 @@ const AlgorithmBlock: React.FC<AlgorithmBlockProps> = ({
                         labels={logicConnectionsTypes}
                         mode="single"
                         columns={2}
-                        value={input1Id}
+                        value={config?.input1_id}
                         onChange={onConnectionTypeChange}
-                        disabled={disabledState}
+                        disabled={disabled}
                     />
                 </div>
                 <div className="logic-block">
@@ -110,9 +93,9 @@ const AlgorithmBlock: React.FC<AlgorithmBlockProps> = ({
                         labels={logicConnectionsTypes}
                         mode="single"
                         columns={2}
-                        value={input2Id}
+                        value={config?.input2_id}
                         onChange={onConnectionTypeChange}
-                        disabled={disabledState}
+                        disabled={disabled}
                     />
                 </div>
             </div>
@@ -127,10 +110,10 @@ const AlgorithmBlock: React.FC<AlgorithmBlockProps> = ({
                         id="block-type"
                         labels={logicBlockTypes}
                         mode="single"
-                        value={blockType}
+                        value={getBlockTypeValue()}
                         fontSize={12}
                         onChange={onBlockTypeChange}
-                        disabled={disabledState}
+                        disabled={disabled}
                     />
                 </div>
             </div>

@@ -67,7 +67,7 @@ function App() {
         )} */}
       </div>
       <SwipeScreensControl onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
-        <MainScreen audioEngineStarted={audioEngineStarted} />
+        <MainScreen />
         <div>
           <EffectsScreen setReverbAlgoParameters={setReverbAlgoParameters} />
         </div>

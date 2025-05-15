@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import OscillatorControl from '@controls/oscillator-control/oscillator-control'
 import AlgorithmBlock from '@algorithm/algorithm-4o3l/algorithm-block'
 import MixerBlock from '@controls/mixer-block/mixer-block'
@@ -7,27 +7,28 @@ import type { OscillatorConfig } from '@api/oscillatorApi'
 import useOscillatorApi from '@api/oscillatorApi'
 import './main-screen.css'
 
-interface MainScreenProps {
-  audioEngineStarted: boolean;
-}
 
-const MainScreen: React.FC<MainScreenProps> = ({ audioEngineStarted }) => {
+const MainScreen: React.FC = () => {
   const [oscillators, setOscillators] = useState<OscillatorConfig[]>([]);
   const [logicBlocks, setLogicBlocks] = useState<LogicBlockConfig[]>([]);
+  const dataFetching = useRef({oscillators: false, logicBlocks: false}); // to prevent multiple fetching in development mode
 
   const { getOscillators, updateOscillator } = useOscillatorApi();
   const { getLogicBlocks, updateLogicBlock } = useLogicBlockApi();
 
-  useEffect(() => {
+  useEffect(() => { 
     (async () => {
-      const oscillators = await getOscillators();
-      if (oscillators.length > 0) {
+      if (!dataFetching.current.oscillators) {
+        dataFetching.current.oscillators = true;
+        const oscillators = await getOscillators();
         setOscillators(oscillators);
       }
 
-      const logics = await getLogicBlocks();
-      console.log('MainScreen logics', logics);
-      setLogicBlocks(logics);
+      if (!dataFetching.current.logicBlocks) {
+        dataFetching.current.logicBlocks = true;
+        const logics = await getLogicBlocks();
+        setLogicBlocks(logics);
+      }
     })()
   }, []);
 
@@ -35,14 +36,12 @@ const MainScreen: React.FC<MainScreenProps> = ({ audioEngineStarted }) => {
     const index = config.logic_block_id;
     const newLogicBlocks = [...logicBlocks];
     newLogicBlocks[index] = config;
-    console.log('MainScreen setValueBlock newLogicBlocks', config, newLogicBlocks);
-    setLogicBlocks(newLogicBlocks);
     updateLogicBlock(config);
   }
 
   return (
     <div>
-      <div className="content-block">
+      <div className={`content-block ${dataFetching.current.oscillators || "loading-block"}`}>
         <OscillatorControl
           config={oscillators[0]}
           showLabel={true}
@@ -82,20 +81,22 @@ const MainScreen: React.FC<MainScreenProps> = ({ audioEngineStarted }) => {
           }} />
       </div>
 
-      <div className="content-block">
+      <div className={`content-block ${dataFetching.current.logicBlocks || "loading-block"}`}>
         <div className="cols-2 block-container">
+          {/* {logicBlocks[0]?.input1_id}
+          {logicBlocks[0]?.input2_id} */}
           <AlgorithmBlock title="LOP 1" id={0} onBlockChange={setValueBlock}
-            disabled={!audioEngineStarted}
+            disabled={!logicBlocks[0]}
             config={logicBlocks[0]}
           />
           <AlgorithmBlock title="LOP 2" id={1} onBlockChange={setValueBlock}
-            disabled={!audioEngineStarted}
+            disabled={!logicBlocks[1]}
             config={logicBlocks[1]}
           />
         </div>
         <div className="cols-2 block-container">
           <AlgorithmBlock title="LOP 3" id={2} onBlockChange={setValueBlock}
-            disabled={!audioEngineStarted}
+            disabled={!logicBlocks[2]}
             config={logicBlocks[2]}
           />
           <MixerBlock id="mixer-1" title="MIXER 1" onMixerChange={() => { }} />

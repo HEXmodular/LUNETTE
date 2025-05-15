@@ -43,12 +43,11 @@ export const SelectControl: React.FC<SelectControlProps> = ({
     const [isActive, setIsActive] = useState<boolean[]>(Array(labels.length).fill(false));
 
     useEffect(() => {
-        // console.log('SelectControl state id',id, isActive, value, values);
         if (disabled) {
             return;
         }
         setIsActive(valuesState(value, values));
-    }, [value, values]);
+    }, [disabled, value, values]);
 
     const handleToggle = useCallback((index: number) => {
         if (disabled) {

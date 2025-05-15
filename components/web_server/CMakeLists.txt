@@ -23,7 +23,7 @@ idf_component_register(
         "static/lunette/dist/index.js" 
         "static/lunette/dist/index.css" 
         "static/lunette/dist/worklets/audio-worklet.js"
-        "static/lunette/dist/worklets/reverb-algo-worklet.js"
+        "static/lunette/dist/vite.svg"
     EMBED_TXTFILES
         "certs/certificate.pem"
         "certs/private_key.pem"
