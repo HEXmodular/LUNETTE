@@ -8,36 +8,26 @@ import MainScreen from './screens/main-screen'
 import EffectsScreen from './screens/effects-screen'
 import { KeyboardScreen } from './screens/keyboard-screen'
 import { OscillatorProvider } from '@contexts/OscillatorContext'
+import { TouchProvider, useTouch } from './contexts/touch-context'
 
 import './App.css'
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const wsUrl = import.meta.env.DEV ? 'https://lunette.local/ws' : '/ws';
 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [audioEngineStarted, setAudioEngineStarted] = useState(false);
   const { audioWorkletNode } = useWebSocketAudioInput(audioContext, wsUrl);
   const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(audioContext);
+  const { isTouching } = useTouch();
 
-  // для отладки загрузка аудио из файла с интернета
-  // const loadAudioFile = async (url: string) => {
-  //   if (!audioContext) return;
-    
-  //   try {
-  //     const response = await fetch(url);
-  //     const arrayBuffer = await response.arrayBuffer();
-  //     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      
-  //     const source = audioContext.createBufferSource();
-  //     source.buffer = audioBuffer;
-  //     if (reverbAlgoNode) {
-  //       source.connect(reverbAlgoNode.input);
-  //     }
-  //     source.start(0);
-  //   } catch (error) {
-  //     console.error('Error loading audio file:', error);
-  //   }
-  // };
+  useEffect(() => {
+    if (isTouching) {
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.documentElement.style.overflow = 'auto';
+    }
+  }, [isTouching]);
 
   useEffect(() => {
     console.log('audioEngineStarted', audioEngineStarted);
@@ -53,8 +43,6 @@ const App: React.FC = () => {
     if (audioContext && audioWorkletNode && reverbAlgoNode) {
       audioWorkletNode.connect(reverbAlgoNode.input);
       reverbAlgoNode.connect(audioContext.destination);
-
-      // audioWorkletNode.connect(audioContext.destination);
     }
   }, [audioContext, audioWorkletNode, reverbAlgoNode]);
 
@@ -65,11 +53,6 @@ const App: React.FC = () => {
           {!audioEngineStarted && <button onClick={() => {
             setAudioEngineStarted(true);
           }}>START AUDIO ENGINE</button>}
-          {/* {audioEngineStarted && (
-            <button onClick={() => loadAudioFile('https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg.wav')}>
-              Load Test Audio
-            </button>
-          )} */}
         </div>
         <SwipeScreensControl onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
           <KeyboardScreen />
@@ -80,7 +63,15 @@ const App: React.FC = () => {
         </SwipeScreensControl>
       </div>
     </OscillatorProvider>
-  )
-}
+  );
+};
 
-export default App
+const App: React.FC = () => {
+  return (
+    <TouchProvider>
+      <AppContent />
+    </TouchProvider>
+  );
+};
+
+export default App;

@@ -48,16 +48,26 @@ const MainScreen: React.FC = () => {
         ))}
       </div>
 
-      <div className="content-block">
-        <AlgorithmBlock
-          oscillators={oscillators}
-          logicBlocks={logicBlocks}
-          setValueBlock={setValueBlock}
-        />
-      </div>
 
-      <div className="content-block">
-        <MixerBlock />
+      <div className={`content-block ${dataFetching.current.logicBlocks || "loading-block"}`}>
+        <div className="cols-2 block-container">
+
+          <AlgorithmBlock title="LOP 1" id={0} onBlockChange={setValueBlock}
+            disabled={!logicBlocks[0]}
+            config={logicBlocks[0]}
+          />
+          <AlgorithmBlock title="LOP 2" id={1} onBlockChange={setValueBlock}
+            disabled={!logicBlocks[1]}
+            config={logicBlocks[1]}
+          />
+        </div>
+        <div className="cols-2 block-container">
+          <AlgorithmBlock title="LOP 3" id={2} onBlockChange={setValueBlock}
+            disabled={!logicBlocks[2]}
+            config={logicBlocks[2]}
+          />
+          <MixerBlock id="mixer-1" title="MIXER 1" onMixerChange={() => { }} />
+        </div>
       </div>
     </div>
   );

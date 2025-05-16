@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useTouch } from '../../contexts/touch-context';
 import './value-control.css';
 
 interface ValueControlProps {
@@ -31,6 +32,8 @@ const ValueControl: React.FC<ValueControlProps> = ({
     formatValue = (value) => Math.round(value).toString(),
     onChange,
 }) => {
+    const { isLongPressing, handleTouchStart, handleTouchEnd, handleTouchMove } = useTouch();
+
     const [currentValue, setCurrentValue] = useState(value);
     const [isActive, setIsActive] = useState(false);
     const [buttonPosition, setButtonPosition] = useState<Position>({ x: 0, y: 0 });
@@ -40,7 +43,6 @@ const ValueControl: React.FC<ValueControlProps> = ({
     const elementRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
-    // const startPosition = useRef<Position>({ x: 0, y: 0 });
     const longPressTimer = useRef<number | null>(null);
     const isTimerCancelled = useRef(false);
 
@@ -123,25 +125,17 @@ const ValueControl: React.FC<ValueControlProps> = ({
         };
     };
 
-    // const logDebug = (message: string) => {
-    //     const debugLog = document.getElementById('debug-log');
-    //     if (debugLog) {
-    //         debugLog.textContent += message + "\n";
-    //     }
-    // };  
-
     const handlePointerStart = (e: ReactPointerEvent) => {
-        // e.preventDefault();
-        console.log("ValueControl handlePointerStart")
-        // logDebug("ValueControl handlePointerStart")
+        if ('touches' in e) {
+            handleTouchStart(e);
+        }
         
         const pos = getEventPosition(e);
         
         isTimerCancelled.current = false;
+        // todo переделать на isLongPressing
         longPressTimer.current = window.setTimeout(() => {
             if (!isTimerCancelled.current) {
-                // console.log("ValueControl longPressTimer")
-                // logDebug("ValueControl longPressTimer")
                 const pos = getEventPosition(e);
                 setIsActive(true);
                 updateButtonPosition(pos.x, pos.y);
@@ -153,13 +147,14 @@ const ValueControl: React.FC<ValueControlProps> = ({
     };
 
     const handlePointerMove = (e: ReactPointerEvent) => {
-        // e.preventDefault();
-        // logDebug("ValueControl handlePointerMove")
+        if ('touches' in e) {
+            handleTouchMove(e);
+        }
 
         e.preventDefault();
         const pos = getEventPosition(e);
         
-        if (isActive) {
+        if (isActive || isLongPressing) {
             updateButtonPosition(pos.x, pos.y);
         } else {
             lastYRef.current = pos.y;
@@ -168,13 +163,7 @@ const ValueControl: React.FC<ValueControlProps> = ({
             const change = deltaY > 0 ? -speed : speed;
             const newValue = currentValue + change;
             const absChange = Math.abs(newValue-currentValue);
-            if (absChange >= sensitivity) {
-                console.log("ValueControl handlePointerMove absChange > sensitivity")
-                // logDebug("ValueControl handlePointerMove absChange > sensitivity")
-            }
             if ((absChange >= sensitivity) && (longPressTimer.current)) {
-                console.log("ValueControl handlePointerMove clearTimeout")
-                // logDebug("ValueControl handlePointerMove clearTimeout")
                 isTimerCancelled.current = true;
                 clearTimeout(longPressTimer.current);
                 longPressTimer.current = null;
@@ -183,11 +172,11 @@ const ValueControl: React.FC<ValueControlProps> = ({
         }
     };
 
+    const handlePointerEnd = useCallback((e: ReactPointerEvent) => {
+        if ('touches' in e) {
+            handleTouchEnd(e);
+        }
 
-    const handlePointerEnd = useCallback(() => {
-        // e.preventDefault();
-        // console.log("ValueControl handleReactPointerEnd")
-        // logDebug("ValueControl handlePointerEnd")
         if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
@@ -198,30 +187,7 @@ const ValueControl: React.FC<ValueControlProps> = ({
         if (elementRef.current) {
             elementRef.current.classList.remove('active');
         }
-    }, []);
-
-    // useEffect(() => {
-    //     const element = elementRef.current;
-    //     if (!element) return;
-
-    //     document.addEventListener('mousemove', handlePointerMove);
-    //     document.addEventListener('mouseup', handlePointerEnd);
-    //     document.addEventListener('touchmove', handlePointerMove, { passive: false });
-    //     document.addEventListener('touchend', handlePointerEnd);
-    //     document.addEventListener('touchcancel', handlePointerEnd);
-
-    //     return () => {
-    //         document.removeEventListener('mousemove', handlePointerMove);
-    //         document.removeEventListener('mouseup', handlePointerEnd);
-    //         document.removeEventListener('touchmove', handlePointerMove);
-    //         document.removeEventListener('touchend', handlePointerEnd);
-    //         document.removeEventListener('touchcancel', handlePointerEnd);
-
-    //         if (longPressTimer.current) {
-    //             clearTimeout(longPressTimer.current);
-    //         }
-    //     };
-    // }, [handlePointerMove, handlePointerEnd]);
+    }, [handleTouchEnd]);
 
     const handleStyle = {
         transform: `rotate(${(currentValue - min) / (max - min) * 360}deg) translateY(-100px) translateX(-50%)`
@@ -236,8 +202,12 @@ const ValueControl: React.FC<ValueControlProps> = ({
         <div
             ref={elementRef}
             className="value-control"
-            // onMouseDown={handlePointerStart}
-            // onTouchStart={handlePointerStart}
+            onMouseDown={handlePointerStart}
+            onTouchStart={handlePointerStart}
+            onMouseMove={handlePointerMove}
+            onTouchMove={handlePointerMove}
+            onMouseUp={handlePointerEnd}
+            onTouchEnd={handlePointerEnd}
         >
             {showLabel && label && (
                 <label htmlFor={id}>{label}</label>
@@ -247,12 +217,6 @@ const ValueControl: React.FC<ValueControlProps> = ({
                     ref={buttonRef}
                     className={`slider-button ${isActive ? 'active' : ''} ${isOverHandle ? 'over-handle' : ''}`}
                     style={buttonStyle}
-                    onMouseDown={handlePointerStart}
-                    onMouseMove={handlePointerMove}
-                    onMouseUp={handlePointerEnd}                    
-                    onTouchStart={handlePointerStart}
-                    onTouchMove={handlePointerMove}
-                    onTouchEnd={handlePointerEnd}
                 >
                     {formatValue(currentValue)}
                 </button>

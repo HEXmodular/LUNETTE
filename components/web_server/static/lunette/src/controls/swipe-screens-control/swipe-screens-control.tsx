@@ -3,6 +3,7 @@
 
 import React, { useState, useRef } from 'react';
 import type { TouchEvent } from 'react';
+import { useTouch } from '../../contexts/touch-context';
 import './swipe-screens-control.css';
 
 interface SwipeScreensProps {
@@ -16,39 +17,27 @@ export const SwipeScreensControl: React.FC<SwipeScreensProps> = ({
   onScreenChange,
   initialScreen = 0,
 }) => {
+  const { isTouching } = useTouch();
   const [currentScreen, setCurrentScreen] = useState(initialScreen);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [isLongPress, setIsLongPress] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const longPressTimerRef = useRef<NodeJS.Timeout>(null);
 
   const minSwipeDistance = 50;
 
   const handleTouchStart = (e: TouchEvent) => {
+    if (isTouching) return; // Если touch уже используется другим контролом, игнорируем
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
-    setIsLongPress(false);
-    //если долгое нажатие в течение 500мс, то свайп не работает
-    longPressTimerRef.current = setTimeout(() => {
-      setIsLongPress(true);
-    }, 500);
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-    if (isLongPress) return;
+    if (isTouching) return; // Если touch уже используется другим контролом, игнорируем
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
-  const handleTouchEnd = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-    }
-
-    if (isLongPress) {
-      setIsLongPress(false);
-      return;
-    }
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (isTouching) return; // Если touch уже используется другим контролом, игнорируем
     
     if (!touchStart || !touchEnd) return;
 
