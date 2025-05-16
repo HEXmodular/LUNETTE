@@ -1,13 +1,17 @@
 // import viteLogo from '/vite.svg'
+import React from 'react'
 import { useEffect, useState } from 'react'
 import { useWebSocketAudioInput } from '@audio/webSocketAudioInput'
 import { useReverbAlgo } from '@audio/reverbAlgo'
-import './App.css'
 import { SwipeScreensControl } from './controls/swipe-screens-control/swipe-screens-control'
 import MainScreen from './screens/main-screen'
 import EffectsScreen from './screens/effects-screen'
+import { KeyboardScreen } from './screens/keyboard-screen'
+import { OscillatorProvider } from '@contexts/OscillatorContext'
 
-function App() {
+import './App.css'
+
+const App: React.FC = () => {
   const wsUrl = import.meta.env.DEV ? 'https://lunette.local/ws' : '/ws';
 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
@@ -55,25 +59,27 @@ function App() {
   }, [audioContext, audioWorkletNode, reverbAlgoNode]);
 
   return (
-    <>
-      <div className="content-block">
-        {!audioEngineStarted && <button onClick={() => {
-          setAudioEngineStarted(true);
-        }}>START AUDIO ENGINE</button>}
-        {/* {audioEngineStarted && (
-          <button onClick={() => loadAudioFile('https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg.wav')}>
-            Load Test Audio
-          </button>
-        )} */}
-      </div>
-      <SwipeScreensControl onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
-        <MainScreen />
-        <div>
-          <EffectsScreen setReverbAlgoParameters={setReverbAlgoParameters} />
+    <OscillatorProvider>
+      <div className="app">
+        <div className="content-block">
+          {!audioEngineStarted && <button onClick={() => {
+            setAudioEngineStarted(true);
+          }}>START AUDIO ENGINE</button>}
+          {/* {audioEngineStarted && (
+            <button onClick={() => loadAudioFile('https://www2.cs.uic.edu/~i101/SoundFiles/gettysburg.wav')}>
+              Load Test Audio
+            </button>
+          )} */}
         </div>
-        <div>Screen 3</div>
-      </SwipeScreensControl>
-    </>
+        <SwipeScreensControl onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
+          <KeyboardScreen />
+          <MainScreen />
+          <div>
+            <EffectsScreen setReverbAlgoParameters={setReverbAlgoParameters} />
+          </div>
+        </SwipeScreensControl>
+      </div>
+    </OscillatorProvider>
   )
 }
 

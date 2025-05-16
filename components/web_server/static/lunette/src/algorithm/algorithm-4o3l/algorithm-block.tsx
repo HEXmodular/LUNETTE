@@ -47,7 +47,7 @@ const AlgorithmBlock: React.FC<AlgorithmBlockProps> = ({
             input2_type: config?.input2_type || logicConnectionsTypes[0]
         }
 
-        if (!disabled) {
+        if (!disabled && onBlockChange) {
             onBlockChange(data);
         }
     }

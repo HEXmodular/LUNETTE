@@ -21,7 +21,7 @@
 }
 
 .logic-block-btn.active {
-    background: #4CAF50;
+    background: var(--primary-color);
     color: #fff;
     /* border-color: #388e3c;
     box-shadow: 0 2px 10px rgba(76,175,80,0.15); */

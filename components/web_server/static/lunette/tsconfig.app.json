@@ -34,7 +34,8 @@
       "@worklets/*": ["public/worklets/*"],
       "@api/*": ["src/api/*"],
       "@utils/*": ["src/utils/*"],
-      "@algorithm/*": ["src/algorithm/*"]
+      "@algorithm/*": ["src/algorithm/*"],
+      "@contexts/*": ["src/contexts/*"]
     }
   },
   "include": ["src"]

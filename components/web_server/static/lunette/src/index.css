@@ -13,6 +13,26 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  --primary-color: #4CAF50;  
+  --secondary-color: #007bff;
+  
+  --primary-color-light: #dcefdc;
+  --secondary-color-light: #66bfff;
+  
+  --primary-color-dark: #388e3c;
+  --secondary-color-dark: #0056b3;
+
+  --font-color: #333;
+  
+  --spacing-unit-0: 2px; /* для минимального разграничения элементов внутри одного блока */
+  --spacing-unit-1: 4px; /* для разграничения блоков внутри одной функциональной группы */
+  --spacing-unit-2: 6px; /* для разграничения функциональных групп */
+  --spacing-unit-3: 8px; 
+  --spacing-unit-4: 12px; 
+  
+}  
+
 a {
   font-weight: 500;
   color: #646cff;

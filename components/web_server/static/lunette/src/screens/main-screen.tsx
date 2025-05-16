@@ -3,27 +3,17 @@ import OscillatorControl from '@controls/oscillator-control/oscillator-control'
 import AlgorithmBlock from '@algorithm/algorithm-4o3l/algorithm-block'
 import MixerBlock from '@controls/mixer-block/mixer-block'
 import useLogicBlockApi, { type LogicBlockConfig } from '@api/logicBlockApi'
-import type { OscillatorConfig } from '@api/oscillatorApi'
-import useOscillatorApi from '@api/oscillatorApi'
+import { useOscillatorContext } from '@contexts/OscillatorContext'
 import './main-screen.css'
 
-
 const MainScreen: React.FC = () => {
-  const [oscillators, setOscillators] = useState<OscillatorConfig[]>([]);
   const [logicBlocks, setLogicBlocks] = useState<LogicBlockConfig[]>([]);
-  const dataFetching = useRef({oscillators: false, logicBlocks: false}); // to prevent multiple fetching in development mode
-
-  const { getOscillators, updateOscillator } = useOscillatorApi();
+  const dataFetching = useRef({ logicBlocks: false }); // to prevent multiple fetching in development mode
+  const { oscillators, updateOscillator, isLoading: oscillatorsLoading } = useOscillatorContext();
   const { getLogicBlocks, updateLogicBlock } = useLogicBlockApi();
 
   useEffect(() => { 
     (async () => {
-      if (!dataFetching.current.oscillators) {
-        dataFetching.current.oscillators = true;
-        const oscillators = await getOscillators();
-        setOscillators(oscillators);
-      }
-
       if (!dataFetching.current.logicBlocks) {
         dataFetching.current.logicBlocks = true;
         const logics = await getLogicBlocks();
@@ -41,69 +31,36 @@ const MainScreen: React.FC = () => {
 
   return (
     <div>
-      <div className={`content-block ${dataFetching.current.oscillators || "loading-block"}`}>
-        <OscillatorControl
-          config={oscillators[0]}
-          showLabel={true}
-          onChange={(frequency) => {
-            updateOscillator({
-              oscillator_id: 0,
-              frequency: frequency,
-              amplitude: 1.0,
-            });
-          }} />
-        <OscillatorControl
-          config={oscillators[1]}
-          onChange={(frequency) => {
-            updateOscillator({
-              oscillator_id: 1,
-              frequency: frequency,
-              amplitude: 1.0,
-            });
-          }} />
-        <OscillatorControl
-          config={oscillators[2]}
-          onChange={(frequency) => {
-            updateOscillator({
-              oscillator_id: 2,
-              frequency: frequency,
-              amplitude: 1.0,
-            });
-          }} />
-        <OscillatorControl
-          config={oscillators[3]}
-          onChange={(frequency) => {
-            updateOscillator({
-              oscillator_id: 3,
-              frequency: frequency,
-              amplitude: 1.0,
-            });
-          }} />
+      <div className={`content-block ${oscillatorsLoading ? "loading-block" : ""}`}>
+        {oscillators.map((oscillator, index) => (
+          <OscillatorControl
+            key={oscillator.oscillator_id}
+            config={oscillator}
+            showLabel={index === 0}
+            onChange={(frequency) => {
+              updateOscillator({
+                oscillator_id: index,
+                frequency: frequency,
+                amplitude: 1.0,
+              });
+            }}
+          />
+        ))}
       </div>
 
-      <div className={`content-block ${dataFetching.current.logicBlocks || "loading-block"}`}>
-        <div className="cols-2 block-container">
-          {/* {logicBlocks[0]?.input1_id}
-          {logicBlocks[0]?.input2_id} */}
-          <AlgorithmBlock title="LOP 1" id={0} onBlockChange={setValueBlock}
-            disabled={!logicBlocks[0]}
-            config={logicBlocks[0]}
-          />
-          <AlgorithmBlock title="LOP 2" id={1} onBlockChange={setValueBlock}
-            disabled={!logicBlocks[1]}
-            config={logicBlocks[1]}
-          />
-        </div>
-        <div className="cols-2 block-container">
-          <AlgorithmBlock title="LOP 3" id={2} onBlockChange={setValueBlock}
-            disabled={!logicBlocks[2]}
-            config={logicBlocks[2]}
-          />
-          <MixerBlock id="mixer-1" title="MIXER 1" onMixerChange={() => { }} />
-        </div>
+      <div className="content-block">
+        <AlgorithmBlock
+          oscillators={oscillators}
+          logicBlocks={logicBlocks}
+          setValueBlock={setValueBlock}
+        />
+      </div>
+
+      <div className="content-block">
+        <MixerBlock />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MainScreen
+export default MainScreen;

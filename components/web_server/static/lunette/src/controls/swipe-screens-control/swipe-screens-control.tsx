@@ -36,7 +36,6 @@ export const SwipeScreensControl: React.FC<SwipeScreensProps> = ({
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-    e.preventDefault();
     if (isLongPress) return;
     setTouchEnd(e.targetTouches[0].clientX);
   };
