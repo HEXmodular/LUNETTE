@@ -104,7 +104,7 @@ export const PianoControl: React.FC<PianoControlProps> = ({
   };
 
   const renderPianoKeys = (octave: number) => {
-    return NOTES.map((note, index) => {
+    return NOTES.map((note) => {
       const isBlackKey = note.includes('#');
       const fullNote = `${note}${octave}`;
       const isOutsideFrequency = getNoteFromFrequency(freq) === fullNote;

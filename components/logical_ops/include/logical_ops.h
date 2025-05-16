@@ -43,6 +43,7 @@ typedef struct {
     input_type_t input2_type; // Тег типа для input2
     logical_op_t operation;
     bool result;
+    bool prev_result;
 } logical_ops_t;
 
 /**

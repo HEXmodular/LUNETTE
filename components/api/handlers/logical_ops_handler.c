@@ -140,8 +140,37 @@ esp_err_t logical_ops_post_handler(httpd_req_t *req)
 
     // Set inputs
     Oscillator *oscillators = oscillator_logic_get_oscillators();
-    bool *input1 = &oscillators[input1_id_obj->valueint].result_bool;
-    bool *input2 = &oscillators[input2_id_obj->valueint].result_bool;
+    bool *input1 = &oscillators[input1_id_obj->valueint].result_bool;  // Default initialization
+    bool *input2 = &oscillators[input2_id_obj->valueint].result_bool;  // Default initialization
+
+    int input1_id = input1_id_obj->valueint;
+    int input2_id = input2_id_obj->valueint;
+
+    if (logic_block_id == 0 || logic_block_id == 1) {
+        if (input1_id >= 4) {
+            input1 = &logical_ops[input1_id-4].prev_result;
+        }
+        if (input2_id >= 4) {
+            input2 = &logical_ops[input2_id-4].prev_result;
+        }
+    }
+
+    // Для logic_block_id 2 с input1_id 4 или 5 используем результаты из logical_ops
+    if (logic_block_id == 2) {
+        if (input1_id == 4 || input1_id == 5) {
+            input1 = &logical_ops[input1_id-4].result;
+        }
+        if (input2_id == 4 || input2_id == 5) {
+            input2 = &logical_ops[input2_id-4].result;
+        }
+        // взять предыдущий семпл для петли обратной связи
+        if (input1_id == 6) {
+            input1 = &logical_ops[input1_id-4].prev_result;
+        }
+        if (input2_id == 6) {
+            input2 = &logical_ops[input2_id-4].prev_result;
+        }
+    }    
 
     err = logical_ops_set_inputs(&logical_ops[logic_block_id], input1, input2, input1_id_obj->valueint, input2_id_obj->valueint);
     if (err != ESP_OK)

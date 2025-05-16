@@ -36,7 +36,7 @@ export const SwipeScreensControl: React.FC<SwipeScreensProps> = ({
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
-  const handleTouchEnd = (e: TouchEvent) => {
+  const handleTouchEnd = () => {
     if (isTouching) return; // Если touch уже используется другим контролом, игнорируем
     
     if (!touchStart || !touchEnd) return;

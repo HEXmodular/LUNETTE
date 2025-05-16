@@ -103,6 +103,7 @@ bool logical_ops_calculate(logical_ops_t *ops)
         return false;
     }
 
+    ops->prev_result = ops->result;
     bool result = false;
     // Oscillator *osc1 = (Oscillator *)ops->input1;
     // Oscillator *osc2 = (Oscillator *)ops->input2;
