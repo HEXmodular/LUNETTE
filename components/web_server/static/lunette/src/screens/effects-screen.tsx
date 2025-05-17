@@ -1,67 +1,81 @@
-// экран для управления эффектами
-// использует контролы для упрпавления из папки controls
-
-// для ревеербератора отдельный блок для управления параметрами, согласно его интерфейсу
-// interface ReverbParameters {
-//     delayTime1: number;
-//     delayTime2: number;
-//     allpassFreq1: number;
-//     allpassFreq2: number;
-//     allpassFreq3: number;
-//     allpassFreq4: number;
-//     decayTime: number;
-//     damping: number;
-//     wetDryMix: number;
-// }
-
-import React, { useState } from 'react';
+// screen for managing effects
+import React, { useEffect } from 'react';
 import ValueControl from '@controls/value-control/value-control';
-import { type ReverbParameters } from '@audio/reverbAlgo';
+import useReverbAlgo, { type ReverbParameters } from '@audio/reverbAlgo';
+import { useOutputFilters, type OutputFiltersParameters } from '@audio/output-filters';
 
 import './effects-screen.css';
 
 interface EffectsScreenProps {
-    setReverbAlgoParameters: (params: ReverbParameters) => void;
-}    
+    inputNode?: AudioNode | null;
+    outputNode?: AudioNode | null;
+    audioContext: AudioContext | null;
+}
 
-const EffectsScreen: React.FC<EffectsScreenProps> = ({ 
-    setReverbAlgoParameters 
+const EffectsScreen: React.FC<EffectsScreenProps> = ({
+    inputNode,
+    outputNode,
+    audioContext
 }) => {
-    const [reverbParams, setReverbParams] = useState<ReverbParameters>({
-        delayTime1: 0.90,
-        delayTime2: 0.60,
-        allpassFreq1: 777,
-        allpassFreq2: 888,
-        allpassFreq3: 999,
-        allpassFreq4: 666,
-        // decayTime: 20.0,
-        feedbackGain: 0.4,
-        lowpassFreq: 4000,
-        wetDryMix: 0.5
-    });
+    const { reverbAlgoNode, reverbAlgoParameters, setReverbAlgoParameters } = useReverbAlgo(audioContext);
+    const { outputFiltersNode, outputFiltersParameters, setOutputFiltersParameters } = useOutputFilters(audioContext);
 
-    // const { reverbAlgoNode, setReverbAlgoParameters } = useReverbAlgo(null);
+    useEffect(() => {
+        if (audioContext && inputNode && outputNode && reverbAlgoNode && outputFiltersNode) {
+            reverbAlgoNode.connect(inputNode);
+            outputFiltersNode.connect(outputNode);
+        }
+    }, [audioContext, inputNode, outputNode, reverbAlgoNode, outputFiltersNode]);
 
     const handleParamChange = (param: keyof ReverbParameters, value: number) => {
-        const newParams = { ...reverbParams, [param]: value };
-        setReverbParams(newParams);
+        if (!reverbAlgoParameters) return;
+        const newParams = { ...reverbAlgoParameters, [param]: value };
         setReverbAlgoParameters(newParams);
     };
+
+    const handleOutputFiltersParamChange = (param: keyof OutputFiltersParameters, value: number) => {
+        if (!outputFiltersParameters) return;
+        const newParams = { ...outputFiltersParameters, [param]: value };
+        setOutputFiltersParameters(newParams);
+    };
+
+    const isLoading = !inputNode || !outputNode || !reverbAlgoNode || !outputFiltersNode;
 
     return (
         <div className="effects-screen">
 
-            <div className="content-block">
-                <h3>Reverb</h3>
+            <div className={`content-block ${!isLoading || "loading-block"}`}>
+                <div className="output-filters-controls cols-2">
+                    <ValueControl
+                        label="OUTPUT HP"
+                        min={10}
+                        max={8000}
+                        sensitivity={20.0}
+                        value={outputFiltersParameters?.highpassFreq}
+                        onChange={(value) => handleOutputFiltersParamChange('highpassFreq', value)}
+                    />
+                    <ValueControl
+                        label="Lowpass Freq"
+                        min={100}
+                        max={16000}
+                        sensitivity={20.0}
+                        value={outputFiltersParameters?.lowpassFreq}
+                        onChange={(value) => handleOutputFiltersParamChange('lowpassFreq', value)}
+                    />
+
+                </div>
+            </div>
+
+            <div className={`content-block ${!isLoading || "loading-block"}`}>
                 <div className="reverb-controls">
                     <div className="reverb-control-row cols-2">
                         <ValueControl
-                            label="Delay Time"
+                            label="REVERB Delay"
                             min={0.01}
                             max={10.0}
                             sensitivity={0.01}
                             formatValue={(value) => value.toFixed(2)}
-                            value={reverbParams.delayTime1}
+                            value={reverbAlgoParameters?.delayTime1}
                             onChange={(value) => handleParamChange('delayTime1', value)}
                         />
                         <ValueControl
@@ -70,7 +84,7 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             max={10.0}
                             sensitivity={0.01}
                             formatValue={(value) => value.toFixed(2)}
-                            value={reverbParams.delayTime2}
+                            value={reverbAlgoParameters?.delayTime2}
                             onChange={(value) => handleParamChange('delayTime2', value)}
                         />
                     </div>
@@ -81,15 +95,15 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             min={100}
                             max={8000}
                             sensitivity={20.0}
-                            value={reverbParams.allpassFreq1}
+                            value={reverbAlgoParameters?.allpassFreq1}
                             onChange={(value) => handleParamChange('allpassFreq1', value)}
-                        />  
+                        />
                         <ValueControl
                             label="&nbsp;"
                             min={100}
                             max={8000}
                             sensitivity={20.0}
-                            value={reverbParams.allpassFreq2}
+                            value={reverbAlgoParameters?.allpassFreq2}
                             onChange={(value) => handleParamChange('allpassFreq2', value)}
                         />
                     </div>
@@ -99,33 +113,26 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             min={100}
                             max={8000}
                             sensitivity={20.0}
-                            value={reverbParams.allpassFreq3}
+                            value={reverbAlgoParameters?.allpassFreq3}
                             onChange={(value) => handleParamChange('allpassFreq3', value)}
                         />
                         <ValueControl
                             min={100}
                             max={8000}
                             sensitivity={20.0}
-                            value={reverbParams.allpassFreq4}
+                            value={reverbAlgoParameters?.allpassFreq4}
                             onChange={(value) => handleParamChange('allpassFreq4', value)}
                         />
                     </div>
 
                     <div className="reverb-control-row cols-2">
-                        {/* <ValueControl
-                            label="Decay Time"
-                            min={0.1}
-                            max={60.0}
-                            value={reverbParams.decayTime}
-                            onChange={(value) => handleParamChange('decayTime', value)}
-                        /> */}
                         <ValueControl
                             label="Feedback Gain"
                             min={0.0}
                             max={2.0}
                             sensitivity={0.01}
                             formatValue={(value) => value.toFixed(2)}
-                            value={reverbParams.feedbackGain}
+                            value={reverbAlgoParameters?.feedbackGain}
                             onChange={(value) => handleParamChange('feedbackGain', value)}
                         />
                         <ValueControl
@@ -133,11 +140,10 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             min={20}
                             max={20000}
                             sensitivity={20.0}
-                            value={reverbParams.lowpassFreq}
+                            value={reverbAlgoParameters?.lowpassFreq}
                             onChange={(value) => handleParamChange('lowpassFreq', value)}
                         />
                     </div>
-
 
                     <ValueControl
                         label="Wet/Dry Mix"
@@ -145,14 +151,14 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                         max={1}
                         sensitivity={0.01}
                         formatValue={(value) => value.toFixed(2)}
-                        value={reverbParams.wetDryMix}
+                        value={reverbAlgoParameters?.wetDryMix}
                         onChange={(value) => handleParamChange('wetDryMix', value)}
                     />
                 </div>
             </div>
-            <div id="debug-log" className="debug-log" style={{color: 'black'}}>
-                
-                </div>
+            <div id="debug-log" className="debug-log" style={{ color: 'black' }}>
+
+            </div>
         </div>
     );
 };

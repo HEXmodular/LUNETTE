@@ -136,7 +136,6 @@ class AlgorithmicReverb {
 
     // 6. Методы для подключения/отключения обертки в общий аудиограф
     connect(destination: AudioNode): this {
-        console.log('ReverbAlgo connect', destination);
         this.outputNode.connect(destination);
         return this;
     }
@@ -187,14 +186,28 @@ class AlgorithmicReverb {
         return this._lowpassFreq;
     }
 
+    getWetDryMix(): number {
+        return this._wetDryMix;
+    }
+
+    getAllParameters(): ReverbParameters {
+        return {
+            delayTime1: this.delayNode1.delayTime.value,
+            delayTime2: this.delayNode2.delayTime.value,
+            allpassFreq1: this.allpassFilter1.frequency.value,
+            allpassFreq2: this.allpassFilter2.frequency.value,
+            allpassFreq3: this.allpassFilter3.frequency.value,
+            allpassFreq4: this.allpassFilter4.frequency.value,
+            feedbackGain: this.feedbackGainNode.gain.value,
+            lowpassFreq: this.filterNode.frequency.value,
+            wetDryMix: this._wetDryMix,
+        };
+    }
+
     setWetDryMix(value: number): void {
         this._wetDryMix = Math.max(0, Math.min(1, value));
         this.dryGainNode.gain.setValueAtTime(1.0 - this._wetDryMix, this.context.currentTime);
         this.wetGainNode.gain.setValueAtTime(this._wetDryMix, this.context.currentTime);
-    }
-
-    getWetDryMix(): number {
-        return this._wetDryMix;
     }
 
     setDelayTime1(time: number): void {
@@ -295,6 +308,7 @@ export const useReverbAlgo = (context: AudioContext | null) => {
 
     return {
         reverbAlgoNode: reverbRef.current,
+        reverbAlgoParameters: reverbRef.current?.getAllParameters(),
         setReverbAlgoParameters: setParameters
     };
 }; 

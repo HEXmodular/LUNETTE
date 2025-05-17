@@ -3,7 +3,8 @@
 
 import React, { useState, useRef } from 'react';
 import type { TouchEvent } from 'react';
-import { useTouch } from '../../contexts/touch-context';
+import { useTouch } from '@contexts/TouchContext';
+
 import './swipe-screens-control.css';
 
 interface SwipeScreensProps {

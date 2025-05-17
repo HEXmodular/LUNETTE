@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useTouch } from '../../contexts/touch-context';
+import { useTouch } from '../../contexts/TouchContext';
 import './value-control.css';
 
 interface ValueControlProps {
@@ -24,17 +24,17 @@ type ReactPointerEvent = React.MouseEvent<HTMLElement> | React.TouchEvent<HTMLEl
 const ValueControl: React.FC<ValueControlProps> = ({
     min = 0,
     max = 100,
-    value = 50,
+    value,
     showLabel = true,
     label = '',
     id = '',
     sensitivity = 1,
-    formatValue = (value) => Math.round(value).toString(),
+    formatValue = (value) => value ? Math.round(value).toString() : '\u00A0',
     onChange,
 }) => {
     const { isLongPressing, handleTouchStart, handleTouchEnd, handleTouchMove } = useTouch();
 
-    const [currentValue, setCurrentValue] = useState(value);
+    const [currentValue, setCurrentValue] = useState(value ?? 0);
     const [isActive, setIsActive] = useState(false);
     const [buttonPosition, setButtonPosition] = useState<Position>({ x: 0, y: 0 });
     const [isOverHandle, setIsOverHandle] = useState(false);
@@ -47,7 +47,9 @@ const ValueControl: React.FC<ValueControlProps> = ({
     const isTimerCancelled = useRef(false);
 
     useEffect(() => {
-        setCurrentValue(value);
+        if(value) {
+            setCurrentValue(value);
+        }
     }, [value]);
 
     const updateValue = useCallback((newValue: number) => {
@@ -129,9 +131,9 @@ const ValueControl: React.FC<ValueControlProps> = ({
         if ('touches' in e) {
             handleTouchStart(e);
         }
-        
+
         const pos = getEventPosition(e);
-        
+
         isTimerCancelled.current = false;
         // todo переделать на isLongPressing
         longPressTimer.current = window.setTimeout(() => {
@@ -151,9 +153,8 @@ const ValueControl: React.FC<ValueControlProps> = ({
             handleTouchMove(e);
         }
 
-        e.preventDefault();
         const pos = getEventPosition(e);
-        
+
         if (isActive || isLongPressing) {
             updateButtonPosition(pos.x, pos.y);
         } else {
@@ -161,8 +162,8 @@ const ValueControl: React.FC<ValueControlProps> = ({
             const deltaY = lastYRef.current - startYRef.current;
             const speed = (Math.abs(deltaY) / 20) * sensitivity;
             const change = deltaY > 0 ? -speed : speed;
-            const newValue = currentValue + change;
-            const absChange = Math.abs(newValue-currentValue);
+            const newValue = (currentValue) + change;
+            const absChange = Math.abs(newValue - (currentValue));
             if ((absChange >= sensitivity) && (longPressTimer.current)) {
                 isTimerCancelled.current = true;
                 clearTimeout(longPressTimer.current);
@@ -190,7 +191,7 @@ const ValueControl: React.FC<ValueControlProps> = ({
     }, [handleTouchEnd]);
 
     const handleStyle = {
-        transform: `rotate(${(currentValue - min) / (max - min) * 360}deg) translateY(-100px) translateX(-50%)`
+        transform: `rotate(${((currentValue) - min) / (max - min) * 360}deg) translateY(-100px) translateX(-50%)`
     };
 
     const buttonStyle = isActive ? {
@@ -202,17 +203,18 @@ const ValueControl: React.FC<ValueControlProps> = ({
         <div
             ref={elementRef}
             className="value-control"
-            onMouseDown={handlePointerStart}
-            onTouchStart={handlePointerStart}
-            onMouseMove={handlePointerMove}
-            onTouchMove={handlePointerMove}
-            onMouseUp={handlePointerEnd}
-            onTouchEnd={handlePointerEnd}
         >
             {showLabel && label && (
                 <label htmlFor={id}>{label}</label>
             )}
-            <div className="control-container">
+            <div className="control-container"
+                onMouseDown={handlePointerStart}
+                onTouchStart={handlePointerStart}
+                onMouseMove={handlePointerMove}
+                onTouchMove={handlePointerMove}
+                onMouseUp={handlePointerEnd}
+                onTouchEnd={handlePointerEnd}
+            >
                 <button
                     ref={buttonRef}
                     className={`slider-button ${isActive ? 'active' : ''} ${isOverHandle ? 'over-handle' : ''}`}

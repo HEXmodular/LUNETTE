@@ -18,6 +18,7 @@ export default defineConfig({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@algorithm': path.resolve(__dirname, './src/algorithm'),
       '@contexts': path.resolve(__dirname, './src/contexts'),
+      '@screens': path.resolve(__dirname, './src/screens'),
     }
   },
 
