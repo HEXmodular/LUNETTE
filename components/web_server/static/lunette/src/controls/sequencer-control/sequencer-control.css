@@ -1,0 +1,82 @@
+.sequencer-control {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: var(--spacing-unit-0);
+  width: 100%;
+  padding: var(--spacing-unit-0);
+  border-radius: 8px;
+  position: relative;
+  margin-top: 14px;
+}
+
+.sequencer-label {
+  position: absolute;
+  color: #666;
+  top: -13px;
+  font-size: 10px;
+  left: 4px;
+  text-transform: uppercase;
+}
+
+.sequencer-cell {
+  aspect-ratio: 0.65;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.sequencer-cell:hover {
+  border-color: #999;
+}
+
+.sequencer-cell.active {
+  background: var(--primary-color-light);
+  border-color: var(--primary-color-light);
+}
+
+.sequencer-cell.current {
+  /* border-color: #666;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1); */
+  position: relative;
+}
+
+.sequencer-cell.current::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #666;
+  border-radius: 50%;
+}
+
+.length-cross {
+  font-size: 1.2em;
+  line-height: 1;
+  color: #666;
+  font-weight: bold;
+}
+
+.sequencer-cell.length-indicator {
+  border-style: dashed;
+}
+
+.sequencer-menu-button {
+  aspect-ratio: 0.65;
+  width: 100%;
+  cursor: pointer;
+  font-size: 1.5em;
+  line-height: 1;
+  padding: 0;
+}
+
+.sequencer-menu-button:hover {
+  border-color: #999;
+  background: var(--primary-color-light);
+}

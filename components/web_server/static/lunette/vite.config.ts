@@ -19,6 +19,7 @@ export default defineConfig({
       '@algorithm': path.resolve(__dirname, './src/algorithm'),
       '@contexts': path.resolve(__dirname, './src/contexts'),
       '@screens': path.resolve(__dirname, './src/screens'),
+      '@interfaces': path.resolve(__dirname, './src/interfaces'),
     }
   },
 

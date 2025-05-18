@@ -1,3 +1,4 @@
+import type { AudioParamList } from '@/interfaces/AudioParamList';
 import { useEffect, useRef } from 'react';
 
 export interface ReverbParameters {
@@ -16,7 +17,7 @@ export interface ReverbParameters {
 
 // Предполагается, что вы работаете в среде, где доступны типы Web Audio API (например, в браузере или с соответствующими @types)
 
-class AlgorithmicReverb {
+export class AlgorithmicReverb {
     private context: AudioContext;
     private inputNode: GainNode;  // Узел, через который звук входит в ревербератор
     private outputNode: GainNode; // Узел, через который обработанный звук выходит
@@ -204,6 +205,59 @@ class AlgorithmicReverb {
         };
     }
 
+    getAllAutomatedParameters(): AudioParamList {
+        return {
+            hostName: 'reverbAlgo',
+            audioParamList: [
+                {
+                    name: 'Delay Time 1',
+                    shortName: 'DLY',
+                    audioParam: this.delayNode1.delayTime,
+                },
+                {
+                    name: 'Delay Time 2',
+                    shortName: 'DLY',
+                    audioParam: this.delayNode2.delayTime,
+                },
+                {
+                    name: 'Allpass Freq 1',
+                    shortName: 'APF',
+                    audioParam: this.allpassFilter1.frequency,
+                },
+                {
+                    name: 'Allpass Freq 2',
+                    shortName: 'APF',
+                    audioParam: this.allpassFilter2.frequency,
+                },
+                {
+                    name: 'Allpass Freq 3',
+                    shortName: 'APF',
+                    audioParam: this.allpassFilter3.frequency,
+                },
+                {
+                    name: 'Allpass Freq 4',
+                    shortName: 'APF',
+                    audioParam: this.allpassFilter4.frequency,
+                },
+                {
+                    name: 'Feedback Gain',
+                    shortName: 'FBK',
+                    audioParam: this.feedbackGainNode.gain,
+                },
+                {
+                    name: 'Lowpass Freq',
+                    shortName: 'LPF',
+                    audioParam: this.filterNode.frequency,
+                },
+                {
+                    name: 'Wet/Dry Mix',
+                    shortName: 'MIX',
+                    audioParam: this.wetGainNode.gain,
+                },
+            ],
+        };
+    }
+
     setWetDryMix(value: number): void {
         this._wetDryMix = Math.max(0, Math.min(1, value));
         this.dryGainNode.gain.setValueAtTime(1.0 - this._wetDryMix, this.context.currentTime);
@@ -308,8 +362,9 @@ export const useReverbAlgo = (context: AudioContext | null) => {
 
     return {
         reverbAlgoNode: reverbRef.current,
-        reverbAlgoParameters: reverbRef.current?.getAllParameters(),
-        setReverbAlgoParameters: setParameters
+        reverbAlgoParameters: reverbRef.current?.getAllParameters() ?? null,
+        reverbAlgoAutomatedParameters: reverbRef.current?.getAllAutomatedParameters() ?? null,
+        setReverbAlgoParameters: setParameters,
     };
 }; 
 

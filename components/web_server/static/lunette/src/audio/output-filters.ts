@@ -1,4 +1,5 @@
 // lowpass and highpass pair
+import type { AudioParamList } from "@/interfaces/AudioParamList";
 import { useRef, useEffect } from "react";
 
 export interface OutputFiltersParameters {
@@ -45,6 +46,24 @@ export class OutputFilters {
         };
     }
 
+    getAllAutomatedParameters(): AudioParamList {
+        return {
+            hostName: 'reverbAlgo',
+            audioParamList: [
+                {
+                    name: 'Lowpass Freq',
+                    shortName: 'LPF',
+                    audioParam: this.lowpassFilter.frequency,
+                },
+                {
+                    name: 'Highpass Freq',
+                    shortName: 'HPF',
+                    audioParam: this.highpassFilter.frequency,
+                },
+            ],
+        };
+    }
+
     public setParameters(params: OutputFiltersParameters): void {
         this.lowpassFilter.frequency.value = params.lowpassFreq;
         this.highpassFilter.frequency.value = params.highpassFreq;
@@ -83,8 +102,9 @@ export const useOutputFilters = (context: AudioContext | null) => {
 
     return {
         outputFiltersNode: outputFiltersRef.current,
+        outputFiltersParameters: outputFiltersRef.current?.getAllParameters() ?? null,
+        outputFiltersAutomatedParameters: outputFiltersRef.current?.getAllAutomatedParameters() ?? null,
         setOutputFiltersParameters: setParameters,
-        outputFiltersParameters: outputFiltersRef.current?.getAllParameters()
     };
 
 };

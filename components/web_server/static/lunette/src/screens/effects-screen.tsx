@@ -1,9 +1,9 @@
 // screen for managing effects
 import React, { useEffect } from 'react';
 import ValueControl from '@controls/value-control/value-control';
-import useReverbAlgo, { type ReverbParameters } from '@audio/reverbAlgo';
-import { useOutputFilters, type OutputFiltersParameters } from '@audio/output-filters';
-
+import { useEffects } from '@contexts/EffectsContext';
+import { type OutputFiltersParameters } from '@audio/output-filters';
+import { type ReverbParameters } from '@audio/reverbAlgo';
 import './effects-screen.css';
 
 interface EffectsScreenProps {
@@ -17,8 +17,14 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
     outputNode,
     audioContext
 }) => {
-    const { reverbAlgoNode, reverbAlgoParameters, setReverbAlgoParameters } = useReverbAlgo(audioContext);
-    const { outputFiltersNode, outputFiltersParameters, setOutputFiltersParameters } = useOutputFilters(audioContext);
+    const {
+        reverbAlgoNode,
+        reverbAlgoParameters,
+        setReverbAlgoParameters,
+        outputFiltersNode,
+        outputFiltersParameters,
+        setOutputFiltersParameters
+    } = useEffects();
 
     useEffect(() => {
         if (audioContext && inputNode && outputNode && reverbAlgoNode && outputFiltersNode) {
@@ -43,7 +49,6 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
 
     return (
         <div className="effects-screen">
-
             <div className={`content-block ${!isLoading || "loading-block"}`}>
                 <div className="output-filters-controls cols-2">
                     <ValueControl
@@ -62,7 +67,6 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                         value={outputFiltersParameters?.lowpassFreq}
                         onChange={(value) => handleOutputFiltersParamChange('lowpassFreq', value)}
                     />
-
                 </div>
             </div>
 
@@ -157,7 +161,6 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                 </div>
             </div>
             <div id="debug-log" className="debug-log" style={{ color: 'black' }}>
-
             </div>
         </div>
     );

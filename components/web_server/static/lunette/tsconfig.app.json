@@ -36,7 +36,8 @@
       "@utils/*": ["src/utils/*"],
       "@algorithm/*": ["src/algorithm/*"],
       "@contexts/*": ["src/contexts/*"],
-      "@screens/*": ["src/screens/*"]
+      "@screens/*": ["src/screens/*"],
+      "@interfaces/*": ["src/interfaces/*"]
     }
   },
   "include": ["src"]

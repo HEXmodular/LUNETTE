@@ -8,11 +8,14 @@ import { SwipeScreensControl } from '@controls/swipe-screens-control/swipe-scree
 import MainScreen from '@screens/main-screen'
 import EffectsScreen from '@screens/effects-screen'
 import { KeyboardScreen } from '@screens/keyboard-screen'
+import { SequencerScreen } from '@screens/sequencer-screen'
 
 import { OscillatorProvider } from '@contexts/OscillatorContext'
 import { TouchProvider, useTouch } from '@contexts/TouchContext'
+import { EffectsProvider } from '@contexts/EffectsContext'
 
 import './App.css'
+
 
 const AppContent: React.FC = () => {
   const wsUrl = import.meta.env.DEV ? 'https://lunette.local/ws' : '/ws';
@@ -42,6 +45,7 @@ const AppContent: React.FC = () => {
 
   return (
     <OscillatorProvider>
+      <EffectsProvider audioContext={audioContext}>
       <div className="app">
         <div className="content-block">
           {!audioEngineStarted && <button onClick={() => {
@@ -50,12 +54,14 @@ const AppContent: React.FC = () => {
         </div>
         <SwipeScreensControl initialScreen={1} onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
           <KeyboardScreen />
+          <SequencerScreen />
           <MainScreen />
           <div>
-            <EffectsScreen inputNode={audioWorkletNode} outputNode={audioContext?.destination} audioContext={audioContext} />
+              <EffectsScreen inputNode={audioWorkletNode} outputNode={audioContext?.destination} audioContext={audioContext} />
           </div>
         </SwipeScreensControl>
       </div>
+      </EffectsProvider>
     </OscillatorProvider>
   );
 };
