@@ -10,6 +10,8 @@ export class Envelope {
         audioContext: AudioContext
     ): void {
     const now = audioContext.currentTime; // Получаем текущее время аудио-контекста
+    const paramValue = param.value;
+    const paramMaxValue = param.maxValue;
 
     // --- Шаг 1: Отменить все предыдущие запланированные изменения с текущего момента ---
     // Это ГЛАВНЫЙ шаг для предотвращения конфликтов.
@@ -25,14 +27,14 @@ export class Envelope {
     // --- Шаг 3: Планирование сегмента Атаки ---
     // Линейный или экспоненциальный переход от начального значения (0) к peakValue
     const attackEndTime = now + attackTime;
-    param.linearRampToValueAtTime(peakValue, attackEndTime);
+    param.linearRampToValueAtTime(paramValue + paramMaxValue * peakValue, attackEndTime);
     // param.exponentialRampToValueAtTime(peakValue, attackEndTime); // Альтернатива для экспоненциального роста
 
     // --- Шаг 4: Планирование сегмента Спада (Decay) ---
     // Линейный или экспоненциальный переход от peakValue к sustainLevel.
     // Начинается сразу после завершения атаки (во время attackEndTime).
     const decayEndTime = attackEndTime + decayTime;
-    param.linearRampToValueAtTime(sustainLevel, decayEndTime);
+    param.linearRampToValueAtTime(paramValue, decayEndTime);
     // param.exponentialRampToValueAtTime(sustainLevel, decayEndTime); // Альтернатива для экспоненциального спада
     // Или с использованием setTargetAtTime для более естественного спада:
     // param.setTargetAtTime(sustainLevel, attackEndTime, decayTime / 3); // timeConstant примерно 1/3 от желаемой длительности спада

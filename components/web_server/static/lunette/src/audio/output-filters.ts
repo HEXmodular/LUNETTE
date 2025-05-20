@@ -22,6 +22,9 @@ export class OutputFilters {
         this.lowpassFilter.type = 'lowpass';
         this.highpassFilter.type = 'highpass';
 
+        this.lowpassFilter.frequency.value = 1200;
+        this.highpassFilter.frequency.value = 20;
+
         // Connect filters
         this.highpassFilter.connect(this.lowpassFilter);
     }

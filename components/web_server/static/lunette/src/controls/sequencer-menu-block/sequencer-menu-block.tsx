@@ -3,11 +3,11 @@ import { SelectControl } from '@controls/select-control/select-control';
 import { useEffects } from '@contexts/EffectsContext';
 import ValueControl from '@controls/value-control/value-control';
 import './sequencer-menu-block.css';
-import type { AudioParamList } from '@/interfaces/AudioParamList';
+import type { AudioParamItem } from '@/interfaces/AudioParamList';
 
 interface SequencerMenuBlockProps {
     id: string;
-    onBlockChange?: (blockId: string, parameter: AudioParamList) => void;
+    onBlockChange?: (blockId: string, parameter:  AudioParamItem) => void;
     onEnvelopeChange?: (params: { attackTime: number; peakValue: number; decayTime: number }) => void;
     onDurationChange?: (params: { bars: number; sixteenths: number }) => void;
 }
@@ -56,10 +56,8 @@ export const SequencerMenuBlock: React.FC<SequencerMenuBlockProps> = ({
     const handleParameterChange = (_: any, index: number, value: boolean) => {
         if (value && selectedBlock) {
             const parameter = blockParameters[selectedBlock][index];
-            onBlockChange?.(selectedBlock, {
-                hostName: selectedBlock,
-                audioParamList: [parameter]
-            });
+            console.log('parameter', parameter, selectedBlock, );
+            onBlockChange?.(selectedBlock, parameter);
         }
     };
 

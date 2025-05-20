@@ -38,6 +38,9 @@ const AppContent: React.FC = () => {
     console.log('audioEngineStarted', audioEngineStarted);
     if (audioEngineStarted) {
       const audioContextRef = new AudioContext();
+      audioContextRef.addEventListener('error', (event) => {
+        console.error('AudioContext error', event);
+      });
       setAudioContext(audioContextRef);
     }
   }, [audioEngineStarted]);
@@ -54,8 +57,8 @@ const AppContent: React.FC = () => {
         </div>
         <SwipeScreensControl initialScreen={1} onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
           <KeyboardScreen />
-          <SequencerScreen />
           <MainScreen />
+          <SequencerScreen />
           <div>
               <EffectsScreen inputNode={audioWorkletNode} outputNode={audioContext?.destination} audioContext={audioContext} />
           </div>

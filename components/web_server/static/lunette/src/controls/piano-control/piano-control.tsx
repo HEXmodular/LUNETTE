@@ -45,7 +45,6 @@ const getNoteFromFrequency = (frequency?: number): string => {
   const octaveDiff = Math.floor(noteDiff / 12);
   const noteIndex = (noteDiff % 12 + 12) % 12;
   const octave = A4_OCTAVE + octaveDiff;
-  console.log(`${NOTES[noteIndex]}${octave}`);
   return `${NOTES[noteIndex]}${octave}`;
 };
 

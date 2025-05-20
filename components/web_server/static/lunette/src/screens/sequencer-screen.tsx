@@ -5,14 +5,14 @@ import { Sequencer } from '@controls/sequencer-control/sequencer';
 import ValueControl from '@controls/value-control/value-control';
 
 import { Envelope } from '@audio/envelop';
-import type { AudioParamList } from '@interfaces/AudioParamList';
+import type { AudioParamItem } from '@interfaces/AudioParamList';
 import { useEffects } from '@contexts/EffectsContext';
 
 import './sequencer-screen.css';
 
 interface SequencerState {
     blockType: string | null;
-    parameter: AudioParamList | null;
+    parameter: AudioParamItem | null;
     parameterName: string | null;
     isMenuOpen: boolean;
     currentStep: number;
@@ -40,9 +40,9 @@ export const SequencerScreen: React.FC = () => {
             currentStep: 0,
             values: Array(8).fill(false),
             envelopeParams: {
-                attackTime: 0.1,
+                attackTime: 0.2,
                 peakValue: 1.0,
-                decayTime: 0.2
+                decayTime: 1.2
             },
             durationParams: {
                 bars: 1,
@@ -51,8 +51,20 @@ export const SequencerScreen: React.FC = () => {
         })
     );
 
-    const sequencersRef = useRef<Sequencer[]>(
-        Array(6).fill(null).map((_, index) => new Sequencer({
+    const sequencersRef = useRef<Sequencer[]>([]);
+    const envelopesRef = useRef<Envelope[]>(
+        Array(6).fill(null).map(() => new Envelope())
+    );
+
+    // Create sequencers when audioContext changes
+    useEffect(() => {
+        if (!audioContext) return;
+
+        // Cleanup old sequencers
+        sequencersRef.current.forEach(sequencer => sequencer.destroy());
+
+        // Create new sequencers
+        sequencersRef.current = Array(6).fill(null).map((_, index) => new Sequencer({
             sequenceLength: 8,
             timeUnit: 1000,
             onStepChange: (step) => {
@@ -63,20 +75,17 @@ export const SequencerScreen: React.FC = () => {
                         currentStep: step
                     };
 
-                    // Проверяем, активен ли текущий шаг
                     if (newStates[index].values[step]) {
-                        // Получаем текущий блок и параметр
                         const { blockType, parameter, envelopeParams } = newStates[index];
                         
                         if (blockType && parameter && audioContext) {
-                            // Запускаем огибающую для параметра
                             const envelope = envelopesRef.current[index];
                             envelope.startEnvelope(
-                                parameter.audioParamList[0].audioParam,
+                                parameter.audioParam,
                                 envelopeParams.attackTime,
                                 envelopeParams.peakValue,
                                 envelopeParams.decayTime,
-                                0.7, // sustainLevel
+                                0.7,
                                 audioContext
                             );
                         }
@@ -85,14 +94,8 @@ export const SequencerScreen: React.FC = () => {
                     return newStates;
                 });
             }
-        }))
-    );
+        }));
 
-    const envelopesRef = useRef<Envelope[]>(
-        Array(6).fill(null).map(() => new Envelope())
-    );
-
-    useEffect(() => {
         // Start all sequencers
         sequencersRef.current.forEach(sequencer => sequencer.start());
 
@@ -100,17 +103,18 @@ export const SequencerScreen: React.FC = () => {
         return () => {
             sequencersRef.current.forEach(sequencer => sequencer.destroy());
         };
-    }, []);
+    }, [audioContext]);
 
-    const handleBlockChange = (index: number, blockType: string, parameter: AudioParamList) => {
+    const handleBlockChange = (index: number, blockType: string, parameter: AudioParamItem) => {
+        console.log('handleBlockChange', index, blockType, parameter);
         setSequencerStates(prev => {
             const newStates = [...prev];
             newStates[index] = {
                 ...newStates[index],
                 blockType,
                 parameter,
-                parameterName: parameter.audioParamList[0].name || 'Parameter',
-                isMenuOpen: false
+                parameterName: parameter.name || 'Parameter',
+                // isMenuOpen: false
             };
             return newStates;
         });

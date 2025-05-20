@@ -1,4 +1,4 @@
-interface AudioParamItem {
+export interface AudioParamItem {
     name: string;
     shortName: string;
     audioParam: AudioParam;

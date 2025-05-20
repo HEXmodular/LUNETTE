@@ -1,5 +1,5 @@
 // screen for managing effects
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ValueControl from '@controls/value-control/value-control';
 import { useEffects } from '@contexts/EffectsContext';
 import { type OutputFiltersParameters } from '@audio/output-filters';
@@ -26,10 +26,34 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
         setOutputFiltersParameters
     } = useEffects();
 
+    // const [reverbAlgoParametersInner, setReverbAlgoParametersInner] = useState<ReverbParameters | null>(null);
+
     useEffect(() => {
         if (audioContext && inputNode && outputNode && reverbAlgoNode && outputFiltersNode) {
-            reverbAlgoNode.connect(inputNode);
-            outputFiltersNode.connect(outputNode);
+            inputNode.connect(outputFiltersNode.input);
+            outputFiltersNode.output.connect(reverbAlgoNode.input);
+            reverbAlgoNode.output.connect(outputNode);
+
+
+            const initialParams: ReverbParameters = {
+                delayTime1: 2,
+                delayTime2: 3,
+                allpassFreq1: 1000,
+                allpassFreq2: 2000,
+                allpassFreq3: 3000,
+                allpassFreq4: 4000,
+                feedbackGain: 0.33,
+                lowpassFreq: 10000,
+                wetDryMix: 0.75,
+            };
+
+            // inputNode.connect(outputNode);
+            setReverbAlgoParameters(initialParams);
+
+            setOutputFiltersParameters({
+                highpassFreq: 20,
+                lowpassFreq: 12000,
+            });
         }
     }, [audioContext, inputNode, outputNode, reverbAlgoNode, outputFiltersNode]);
 
@@ -73,12 +97,13 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
             <div className={`content-block ${!isLoading || "loading-block"}`}>
                 <div className="reverb-controls">
                     <div className="reverb-control-row cols-2">
+                        {/* {JSON.stringify(reverbAlgoParameters)} */}
                         <ValueControl
                             label="REVERB Delay"
                             min={0.01}
                             max={10.0}
                             sensitivity={0.01}
-                            formatValue={(value) => value.toFixed(2)}
+                            formatValue={(value) => value === undefined ? ' ' : value.toFixed(2)}
                             value={reverbAlgoParameters?.delayTime1}
                             onChange={(value) => handleParamChange('delayTime1', value)}
                         />
@@ -87,7 +112,7 @@ const EffectsScreen: React.FC<EffectsScreenProps> = ({
                             min={0.01}
                             max={10.0}
                             sensitivity={0.01}
-                            formatValue={(value) => value.toFixed(2)}
+                            formatValue={(value) => value === null ? ' ' : value.toFixed(2)}
                             value={reverbAlgoParameters?.delayTime2}
                             onChange={(value) => handleParamChange('delayTime2', value)}
                         />

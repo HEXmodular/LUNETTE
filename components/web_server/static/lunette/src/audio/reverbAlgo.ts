@@ -44,41 +44,48 @@ export class AlgorithmicReverb {
         this.context = context;
 
         // 1. Создаем входной и выходной узлы обертки
-        this.inputNode = this.context.createGain();
-        this.outputNode = this.context.createGain();
+        this.inputNode = context.createGain();
+        this.outputNode = context.createGain();
 
         // Узлы для разделения сухого и влажного сигналов
-        this.dryGainNode = this.context.createGain();
-        this.wetGainNode = this.context.createGain();
+        this.dryGainNode = context.createGain();
+        this.wetGainNode = context.createGain();
 
         // Соединяем входной узел на выход сухого сигнала
-        this.inputNode.connect(this.dryGainNode); 
+        this.inputNode.connect(this.dryGainNode);
 
 
         // 2. Создаем внутренние узлы для алгоритма реверберации
         // (Пример простой схемы: вход -> влажный гейн -> задержка1 -> фильтр -> гейн обратной связи -> задержка2 -> гейн обратной связи -> ... -> гейн обратной связи -> влажный гейн -> выход)
         // Здесь очень упрощенная схема только для демонстрации связей
-        this.delayNode1 = this.context.createDelay(10);
-        this.delayNode2 = this.context.createDelay(10);
-        this.filterNode = this.context.createBiquadFilter();
+        this.delayNode1 = context.createDelay(10);
+        this.delayNode2 = context.createDelay(10);
+
+        // Установите начальные значения задержек (это критично для алгоритма)
+        // Эти значения зависят от конкретного алгоритма реверберации
+        this.delayNode1.delayTime.value = 2; // 50 ms
+        this.delayNode2.delayTime.value = 3; // 70 ms
+        // ... установите другие времена задержек
+
+        this.filterNode = context.createBiquadFilter();
         this.filterNode.type = 'lowpass'; // Фильтр для демпфирования
 
-        this.allpassFilter1 = this.context.createBiquadFilter();
-        this.allpassFilter2 = this.context.createBiquadFilter();
-        this.allpassFilter3 = this.context.createBiquadFilter();
-        this.allpassFilter4 = this.context.createBiquadFilter();
+        this.allpassFilter1 = context.createBiquadFilter();
+        this.allpassFilter2 = context.createBiquadFilter();
+        this.allpassFilter3 = context.createBiquadFilter();
+        this.allpassFilter4 = context.createBiquadFilter();
 
         this.allpassFilter1.type = 'allpass';
         this.allpassFilter2.type = 'allpass';
         this.allpassFilter3.type = 'allpass';
         this.allpassFilter4.type = 'allpass';
 
-        this.feedbackGainNode = this.context.createGain(); // Гейн для обратной связи
-        this.feedbackGainNode.gain.setValueAtTime(0.99, this.context.currentTime);
+        this.feedbackGainNode = context.createGain(); // Гейн для обратной связи
+        this.feedbackGainNode.gain.value = 0.33
 
-        this.channelMerger = this.context.createChannelMerger(2);
+        this.channelMerger = context.createChannelMerger(2);
 
-        this.inputNode.connect(this.wetGainNode); 
+        this.inputNode.connect(this.wetGainNode);
         this.wetGainNode.connect(this.feedbackGainNode);
 
         // 3. Соединяем внутренние узлы в соответствии с алгоритмом
@@ -92,7 +99,7 @@ export class AlgorithmicReverb {
         this.allpassFilter3.connect(this.allpassFilter4);
         this.allpassFilter4.connect(this.delayNode2);
         this.delayNode2.connect(this.filterNode);
-        
+
         // Создаем петлю обратной связи: выход последнего делая -> гейн обратной связи -> вход первого делая
         this.filterNode.connect(this.feedbackGainNode);
 
@@ -122,17 +129,13 @@ export class AlgorithmicReverb {
         //     this.setDamping(this._dampingFrequency); // Применить значение по умолчанию
         // }
 
-         if (options?.wetDryMix !== undefined) {
+        if (options?.wetDryMix !== undefined) {
             this.setWetDryMix(options.wetDryMix);
         } else {
             this.setWetDryMix(this._wetDryMix); // Применить значение по умолчанию
         }
 
-        // Установите начальные значения задержек (это критично для алгоритма)
-        // Эти значения зависят от конкретного алгоритма реверберации
-        this.delayNode1.delayTime.setValueAtTime(2, this.context.currentTime); // 50 ms
-        this.delayNode2.delayTime.setValueAtTime(3, this.context.currentTime); // 70 ms
-         // ... установите другие времена задержек
+
     }
 
     // 6. Методы для подключения/отключения обертки в общий аудиограф
@@ -260,32 +263,32 @@ export class AlgorithmicReverb {
 
     setWetDryMix(value: number): void {
         this._wetDryMix = Math.max(0, Math.min(1, value));
-        this.dryGainNode.gain.setValueAtTime(1.0 - this._wetDryMix, this.context.currentTime);
-        this.wetGainNode.gain.setValueAtTime(this._wetDryMix, this.context.currentTime);
+        this.dryGainNode.gain.value = 1.0 - this._wetDryMix;
+        this.wetGainNode.gain.value = this._wetDryMix;
     }
 
     setDelayTime1(time: number): void {
-        this.delayNode1.delayTime.setValueAtTime(time, this.context.currentTime);
+        this.delayNode1.delayTime.value = time;
     }
 
     setDelayTime2(time: number): void {
-        this.delayNode2.delayTime.setValueAtTime(time, this.context.currentTime);
+        this.delayNode2.delayTime.value = time;
     }
 
     setAllpassFreq1(freq: number): void {
-        this.allpassFilter1.frequency.setValueAtTime(freq, this.context.currentTime);
+        this.allpassFilter1.frequency.value = freq;
     }
 
     setAllpassFreq2(freq: number): void {
-        this.allpassFilter2.frequency.setValueAtTime(freq, this.context.currentTime);
+        this.allpassFilter2.frequency.value = freq;
     }
 
     setAllpassFreq3(freq: number): void {
-        this.allpassFilter3.frequency.setValueAtTime(freq, this.context.currentTime);
+        this.allpassFilter3.frequency.value = freq;
     }
 
     setAllpassFreq4(freq: number): void {
-        this.allpassFilter4.frequency.setValueAtTime(freq, this.context.currentTime);
+        this.allpassFilter4.frequency.value = freq;
     }
 
     setAllParameters(params: ReverbParameters): void {
@@ -366,6 +369,6 @@ export const useReverbAlgo = (context: AudioContext | null) => {
         reverbAlgoAutomatedParameters: reverbRef.current?.getAllAutomatedParameters() ?? null,
         setReverbAlgoParameters: setParameters,
     };
-}; 
+};
 
 export default useReverbAlgo;
