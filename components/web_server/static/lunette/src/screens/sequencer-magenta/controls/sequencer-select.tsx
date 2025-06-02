@@ -26,6 +26,8 @@ export const SequencerSelect: React.FC<SequencerSelectProps> = ({
     const [sequencerValues, setSequencerValues] = useState<boolean[][]>(
         Array(rows).fill(null).map(() => Array(sequenceLength).fill(false))
     );
+    const [pendingOnChangeData, setPendingOnChangeData] = useState<boolean[][] | null>(null);
+    const [pendingMenuClick, setPendingMenuClick] = useState<boolean>(false);
 
     // Update sequencer values when values prop changes
     useEffect(() => {
@@ -53,25 +55,51 @@ export const SequencerSelect: React.FC<SequencerSelectProps> = ({
         });
     }, [rows, sequenceLength]);
 
+    // Effect to handle pending onChange data
+    useEffect(() => {
+        if (pendingOnChangeData !== null) {
+            onChange(pendingOnChangeData);
+            setPendingOnChangeData(null);
+        }
+    }, [pendingOnChangeData, onChange]);
+
+    // Effect to handle pending menu click
+    useEffect(() => {
+        if (pendingMenuClick) {
+            onMenuClick(); // Call the original onMenuClick prop
+            setPendingMenuClick(false);
+        }
+    }, [pendingMenuClick, onMenuClick]);
+
+    const handleLocalMenuClick = () => {
+        setPendingMenuClick(true);
+    };
+
     const handleValueChange = (sequencerIndex: number, newValues: boolean[]) => {
         setSequencerValues(prev => {
             const newStates = [...prev];
 
             // For each column, ensure only one value is true
             for (let col = 0; col < sequenceLength; col++) {
-                if (newValues[col]) {
-                    // If this column is being set to true, set all others to false
+                if (newValues[col]) { // newValues is for the current row (sequencerIndex)
+                    // If this column is being set to true for the current row,
+                    // set all other rows' columns to false for that column.
                     for (let seq = 0; seq < rows; seq++) {
                         if (seq !== sequencerIndex) {
-                            newStates[seq][col] = false;
+                            if (newStates[seq]) { // Ensure row exists
+                                newStates[seq][col] = false;
+                            }
                         }
                     }
                 }
             }
+            if (newStates[sequencerIndex]) { // Ensure row exists
+               newStates[sequencerIndex] = newValues; // Update the specific row
+            }
 
-            newStates[sequencerIndex] = newValues;
-            onChange(newStates);
-            return newStates;
+            // Instead of calling onChange directly:
+            setPendingOnChangeData(newStates);
+            return newStates; // This updates local sequencerValues
         });
     };
 
@@ -86,7 +114,7 @@ export const SequencerSelect: React.FC<SequencerSelectProps> = ({
                     label={index === 0 ? label : ''}
                     sequenceLength={sequenceLength}
                     currentStep={currentStep}
-                    onMenuClick={onMenuClick}
+                    onMenuClick={handleLocalMenuClick}
                     onChange={(values: boolean[]) => handleValueChange(index, values)}
                     hideMenu={index !== 0}
                     highlightedCells={Array(sequenceLength).fill(false).map((_, i) => i % 4 === 0)}
