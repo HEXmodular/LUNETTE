@@ -15,12 +15,20 @@ interface LogicBlockResponse {
 
 const useLogicBlockApi = () => {
 
-    const getLogicBlocks = async () => {
-        return await BaseApi.get<LogicBlockResponse>('logical-ops').then((data) => data.logical_ops);
+    const getLogicBlocks = async (): Promise<LogicBlockConfig[]> => {
+        const result = await BaseApi.get<LogicBlockResponse>('logical-ops');
+        if (result.success) {
+            return result.data.logical_ops;
+        } else {
+            throw result.error;
+        }
     };
 
     const updateLogicBlock = async (config: LogicBlockConfig): Promise<void> => {
-        return BaseApi.post('logical-ops', config);
+        const result = await BaseApi.post('logical-ops', config);
+        if (!result.success) {
+            throw result.error;
+        }
     };
 
     return {
