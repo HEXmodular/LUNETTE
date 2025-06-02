@@ -10,7 +10,7 @@ interface SequencerSelectProps {
     currentStep: number;
     values: boolean[];
     onMenuClick: () => void;
-    onChange: (values: boolean[][]) => void;
+    onChange: (values: boolean[]) => void;
 }
 
 export const SequencerSelect: React.FC<SequencerSelectProps> = ({ 
@@ -70,7 +70,8 @@ export const SequencerSelect: React.FC<SequencerSelectProps> = ({
             }
 
             newStates[sequencerIndex] = newValues;
-            onChange(newStates);
+            // As per instruction, pass only the single row that was affected.
+            onChange(newStates[sequencerIndex]); 
             return newStates;
         });
     };
@@ -80,14 +81,15 @@ export const SequencerSelect: React.FC<SequencerSelectProps> = ({
             <div className="sequencer-select-container"
                 data-length={sequenceLength}
             >
-            {sequencerValues.map((values, index) => (
+            {sequencerValues.map((rowInternalValues, index) => ( // Renamed 'values' to 'rowInternalValues' for clarity
                 <SequencerControl
                     key={index}
                     label={index === 0 ? label : ''}
                     sequenceLength={sequenceLength}
                     currentStep={currentStep}
+                    values={rowInternalValues} // Pass the specific row's values to SequencerControl
                     onMenuClick={onMenuClick}
-                    onChange={(values: boolean[]) => handleValueChange(index, values)}
+                    onChange={(newRowValues: boolean[]) => handleValueChange(index, newRowValues)}
                     hideMenu={index !== 0}
                     highlightedCells={Array(sequenceLength).fill(false).map((_, i) => i % 4 === 0)}
                     />

@@ -9,6 +9,7 @@ import { SequencerSelectMenuBlock } from './controls/sequencer-select-menu-block
 import { Player } from './mmPlayer';
 
 import './sequencer-magenta.css';
+import { LiveMusicService } from './liveMusic';
 
 declare global {
     var mm: any;
@@ -105,6 +106,84 @@ const SequencerMagenta: React.FC = () => {
     }
 
 
+
+    useEffect(() => {
+        const prompts = new Map<string, Prompt>();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+        // audioAnalyser = new AudioAnalyser(this.audioContext);
+        // this.audioAnalyser.node.connect(this.audioContext.destination);
+
+        console.log("liveMusicService new", liveMusicService);
+        if (liveMusicService) { return }
+        liveMusicService = new LiveMusicService(
+            "AIzaSyCt_3X9-uersas1gHUmFGFmOn9CjvmpVaQ",
+            audioContext,
+            {
+                onPlaybackStateChange: (newState) => {
+                    console.log("playbackStateChange", newState);
+                    //   this.playbackState = newState;
+                },
+                onFilteredPrompt: (filteredPrompt) => {
+                    console.log("filteredPrompt", filteredPrompt);
+                    //   this.filteredPrompts = new Set([...this.filteredPrompts, filteredPrompt.text]);
+                    //   this.toastMessage.show(filteredPrompt.filteredReason);
+                    //   this.requestUpdate('filteredPrompts');
+                },
+                onSetupComplete: () => {
+                    console.log("setup complete");
+                    //   this.connectionError = false;
+                    // if playback was loading due to initial connection, service will push 'playing'
+                },
+                onError: (errorMessage) => {
+                    //   this.connectionError = true;
+                    //   this.toastMessage.show(errorMessage);
+                    console.error("error", errorMessage);
+                    // Playback state is managed by the service and updated via onPlaybackStateChange
+                },
+                onClose: (message) => {
+                    //   this.connectionError = true;
+                    //   this.toastMessage.show(message);
+                    console.error("error", message);
+                    // Playback state is managed by the service
+                },
+                onOutputNodeChanged: (newNode) => () => { console.log("outputNodeChanged", newNode) },
+            })
+
+        const currentServiceOutputNode = liveMusicService.getOutputNode();
+        currentServiceOutputNode.connect(audioContext.destination);
+
+        (async () => {
+            console.log("liveMusicService connect 1", liveMusicService);
+            await liveMusicService.connect();
+            
+            if (liveMusicService.isConnected()) {
+                const promptsToSend = [{text: "ambient", weight: 1, promptId: "test", cc: 0, color: "red"}]
+              await liveMusicService.setWeightedPrompts(promptsToSend);
+
+            } else {
+              // this.playbackState = 'stopped'; // Reflect failed initial connection
+              console.error("error", "failed to connect to live music service");
+            }
+        })();
+          
+        
+        //   private getPromptsToSend() {
+        //     return Array.from(this.prompts.values())
+        //       .filter((p) => {
+        //         return !this.filteredPrompts.has(p.text) && p.weight !== 0;
+        //       })
+        //   }
+        
+        //   private setSessionPrompts = throttle(async () => {
+        //     const promptsToSend = this.getPromptsToSend();
+        //     if (promptsToSend.length === 0) {
+        //       this.toastMessage.show('There needs to be one active prompt to play.')
+        //       this.liveMusicService.pause(); // Tell service to pause
+        //       return;
+        //     }
+        //     await this.liveMusicService.setWeightedPrompts(promptsToSend);
+        //   }, 200);
+    }, []);
 
     // Initialize PianoGenie and Player
     useEffect(() => {
@@ -314,8 +393,8 @@ const SequencerMagenta: React.FC = () => {
                     currentStep={sequencerState.currentStep} // Assuming global step for now
                     values={sequencerState.values[idx]}
                     onMenuClick={() => handleMenuClick(idx)}
-                    onChange={(newValues) => {
-                        handleValueChange(idx, newValues as boolean[]);
+                    onChange={(newValues) => { // newValues is now correctly inferred as boolean[]
+                        handleValueChange(idx, newValues);
                     }}
                 />
             ))}
