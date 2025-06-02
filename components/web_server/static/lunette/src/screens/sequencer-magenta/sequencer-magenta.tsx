@@ -100,11 +100,67 @@ const SequencerMagenta: React.FC = () => {
 
     const { oscillators, updateOscillator, isLoading: oscillatorsLoading } = useOscillatorContext();
 
-    const updateOscillatorFrequency = (oscillator_id: number, frequency: number) => {
+    const updateOscillatorFrequency = useCallback((oscillator_id: number, frequency: number) => {
         updateOscillator({ oscillator_id, frequency, amplitude: 1.0 });
-    }
+    }, [updateOscillator]);
 
+    const handleMasterStepChange = useCallback((masterStep: number) => {
+        setSequencerState(prev => ({
+            ...prev,
+            currentStep: masterStep
+        }));
 
+        [0, 1, 2, 3].forEach(sequencerIndex => {
+            const currentActiveNotes = activeNotes[sequencerIndex];
+            const individualSequenceLength = sequenceLengths[sequencerIndex];
+            const effectiveStepForSequencer = masterStep % individualSequenceLength;
+            const currentSequenceValues = sequencerState.values[sequencerIndex];
+
+            if (!currentSequenceValues) {
+                return;
+            }
+            
+            const isActiveStep = currentSequenceValues[effectiveStepForSequencer];
+
+            if (isActiveStep && genieRef.current) {
+                const localActiveNotesMapping = currentActiveNotes
+                    .map((isActive, noteIndex) => isActive ? noteIndex : -1)
+                    .filter(noteIndex => noteIndex !== -1);
+
+                if (localActiveNotesMapping.length > 0) {
+                    const genieButton = localActiveNotesMapping[0];
+                    const mappedGenieButton = BUTTON_MAPPING[genieButton % Object.keys(BUTTON_MAPPING).length];
+
+                    const note = genieRef.current.nextFromKeyWhitelist(
+                        mappedGenieButton,
+                        keyWhitelist,
+                        menuData.temperature
+                    );
+
+                    if (note !== undefined) {
+                        const pitch = CONSTANTS.LOWEST_PIANO_KEY_MIDI_NOTE + note;
+                        console.log(
+                            `MasterStep: ${masterStep}, Sequencer: ${sequencerIndex}, EffectiveStep: ${effectiveStepForSequencer}, Note: ${pitch}, Button: ${genieButton}(${mappedGenieButton})`
+                        );
+                        updateOscillatorFrequency(sequencerIndex, getMIDINoteFrequency(pitch));
+                    }
+                }
+            }
+        });
+
+        if (genieRef.current && masterStep === INITIAL_SEQUENCE_LENGTH - 1) {
+            // genieRef.current.resetState();
+        }
+    }, [
+        setSequencerState, 
+        activeNotes, 
+        sequenceLengths, 
+        sequencerState.values, 
+        menuData.temperature, 
+        updateOscillatorFrequency, 
+        genieRef
+        // BUTTON_MAPPING, keyWhitelist, CONSTANTS, INITIAL_SEQUENCE_LENGTH are stable module constants
+    ]);
 
     // Initialize PianoGenie and Player
     useEffect(() => {
@@ -151,96 +207,54 @@ const SequencerMagenta: React.FC = () => {
 
     // Separate effect for sequencer initialization and updates
     useEffect(() => {
-        if (!genieRef.current || !playerRef.current || !isPlayerReady) return;
-
-        const handleMasterStepChange = (masterStep: number) => {
-            setSequencerState(prev => ({
-                ...prev,
-                currentStep: masterStep // Update global current step with the master step
-            }));
-
-            [0, 1, 2, 3].forEach(sequencerIndex => {
-                const currentActiveNotes = activeNotes[sequencerIndex];
-                const individualSequenceLength = sequenceLengths[sequencerIndex];
-                
-                // Calculate effective step for this specific sequencer using modulo
-                const effectiveStepForSequencer = masterStep % individualSequenceLength;
-                
-                const currentSequenceValues = sequencerState.values[sequencerIndex];
-
-                // Ensure currentSequenceValues is valid 
-                if (!currentSequenceValues) {
-                    return; 
-                }
-                
-                const isActiveStep = currentSequenceValues[effectiveStepForSequencer];
-
-                if (isActiveStep && genieRef.current) {
-                    const localActiveNotesMapping = currentActiveNotes
-                        .map((isActive, noteIndex) => isActive ? noteIndex : -1)
-                        .filter(noteIndex => noteIndex !== -1);
-
-                    if (localActiveNotesMapping.length > 0) {
-                        const genieButton = localActiveNotesMapping[0];
-                        const mappedGenieButton = BUTTON_MAPPING[genieButton % Object.keys(BUTTON_MAPPING).length];
-
-                        const note = genieRef.current.nextFromKeyWhitelist(
-                            mappedGenieButton,
-                            keyWhitelist,
-                            menuData.temperature
-                        );
-
-                        if (note !== undefined) {
-                            const pitch = CONSTANTS.LOWEST_PIANO_KEY_MIDI_NOTE + note;
-                            console.log(
-                                `MasterStep: ${masterStep}, Sequencer: ${sequencerIndex}, EffectiveStep: ${effectiveStepForSequencer}, Note: ${pitch}, Button: ${genieButton}(${mappedGenieButton})`
-                            );
-                            updateOscillatorFrequency(sequencerIndex, getMIDINoteFrequency(pitch));
-                        }
-                    }
-                }
-            });
-
-            // Global Genie reset at the end of the master sequence (INITIAL_SEQUENCE_LENGTH)
-            if (genieRef.current && masterStep === INITIAL_SEQUENCE_LENGTH - 1) {
-                // console.log(`Global Genie reset at master step ${masterStep}.`);
-                // genieRef.current.resetState(); // This resets Genie's state globally.
+        if (!genieRef.current || !playerRef.current || !isPlayerReady) {
+            // Optional: if player becomes not ready, and sequencer exists, stop it.
+            if (sequencersRef.current && sequencersRef.current.length > 0 && sequencersRef.current[0]) {
+                console.log("Master Sequencer Stopping due to not ready state"); // For debugging
+                sequencersRef.current[0].stop();
+                sequencersRef.current = []; // Clear the ref if stopping and it shouldn't exist
             }
-        };
+            return;
+        }
 
-        if (sequencersRef.current && sequencersRef.current.length > 0 && sequencersRef.current[0]) {
-            // If master sequencer instance exists, just update its callback
-            sequencersRef.current[0].onStepChange = handleMasterStepChange;
-        } else {
+        // Only initialize if it hasn't been initialized yet for the current refs
+        if (!(sequencersRef.current && sequencersRef.current.length > 0 && sequencersRef.current[0])) {
             // Initialize the single master sequencer
             const masterSequencer = new Sequencer({
-                sequenceLength: INITIAL_SEQUENCE_LENGTH, // Fixed length for the master clock
-                timeUnit: 1000, // TODO: make configurable or dynamic if needed
-                onStepChange: handleMasterStepChange
+                sequenceLength: INITIAL_SEQUENCE_LENGTH,
+                timeUnit: 1000,
+                onStepChange: handleMasterStepChange // Initial assignment
             });
             sequencersRef.current = [masterSequencer];
             masterSequencer.start();
+            console.log("Master Sequencer Started"); // For debugging
         }
-        // Cleanup function to stop the sequencer when the component unmounts or dependencies change significantly
+
+        // Cleanup function: Stop the sequencer when isPlayerReady becomes false or component unmounts.
         return () => {
             if (sequencersRef.current && sequencersRef.current[0]) {
+                console.log("Master Sequencer Stopping via cleanup in lifecycle effect"); // For debugging
                 sequencersRef.current[0].stop();
-                 // sequencersRef.current = []; // Optionally clear the ref
+                // Consider clearing the ref if appropriate for your re-initialization logic
+                // sequencersRef.current = []; 
             }
         };
-    }, [
-        genieRef, // ref itself
-        playerRef, // ref itself
-        isPlayerReady,
-        activeNotes,
-        sequenceLengths,
-        sequencerState.values, // Note: This might cause re-runs if not careful.
-        menuData.temperature,
-        keyWhitelist,
-        updateOscillator // From useOscillatorContext, assumed stable (useCallback)
-        // Removed sequencerState.currentStep as it's set by this effect.
-        // Removed selectedSequencerIndex as it's not directly used by master step logic.
-    ]);
+    }, [genieRef, playerRef, isPlayerReady]); // Dependencies are genieRef, playerRef, isPlayerReady
+
+    // Effect to update the sequencer's onStepChange callback when it changes
+    useEffect(() => {
+        if (
+            isPlayerReady && 
+            genieRef.current && 
+            playerRef.current && 
+            sequencersRef.current && 
+            sequencersRef.current.length > 0 && 
+            sequencersRef.current[0]
+        ) {
+            sequencersRef.current[0].onStepChange = handleMasterStepChange;
+            console.log("Master Sequencer onStepChange updated"); // For debugging
+        }
+    }, [handleMasterStepChange, isPlayerReady, genieRef, playerRef]);
 
 
     const handleValueChange = (sequencerIndex: number, newValues: boolean[]) => {
