@@ -8,31 +8,55 @@ import './main-screen.css'
 
 const MainScreen: React.FC = () => {
   const [logicBlocks, setLogicBlocks] = useState<LogicBlockConfig[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const dataFetching = useRef({ logicBlocks: false }); // to prevent multiple fetching in development mode
   const { oscillators, updateOscillator, isLoading: oscillatorsLoading } = useOscillatorContext();
   const { getLogicBlocks, updateLogicBlock } = useLogicBlockApi();
 
   useEffect(() => { 
-    (async () => {
+    const fetchLogicBlocks = async () => {
       if (!dataFetching.current.logicBlocks) {
-        dataFetching.current.logicBlocks = true;
-        const logics = await getLogicBlocks();
-        setLogicBlocks(logics);
+        try {
+          dataFetching.current.logicBlocks = true;
+          setIsLoading(true);
+          setError(null);
+          const logics = await getLogicBlocks();
+          setLogicBlocks(logics);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch logic blocks');
+          // Set empty array to prevent UI from breaking
+          setLogicBlocks([]);
+        } finally {
+          setIsLoading(false);
+        }
       }
-    })()
-  }, []);
+    };
 
-  const setValueBlock = (config: LogicBlockConfig) => {
-    const index = config.logic_block_id;
-    const newLogicBlocks = [...logicBlocks];
-    newLogicBlocks[index] = config;
-    updateLogicBlock(config);
+    fetchLogicBlocks();
+  }, [getLogicBlocks]);
+
+  const setValueBlock = async (config: LogicBlockConfig) => {
+    try {
+      await updateLogicBlock(config);
+      const index = config.logic_block_id;
+      const newLogicBlocks = [...logicBlocks];
+      newLogicBlocks[index] = config;
+      setLogicBlocks(newLogicBlocks);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update logic block');
+    }
   }
 
   return (
     <div>
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
       <div className={`content-block ${oscillatorsLoading ? "loading-block" : ""}`}>
-        {oscillators.map((oscillator, index) => (
+        {oscillators?.map((oscillator, index) => (
           <OscillatorControl
             key={oscillator.oscillator_id}
             config={oscillator}
@@ -48,23 +72,21 @@ const MainScreen: React.FC = () => {
         ))}
       </div>
 
-
-      <div className={`content-block ${dataFetching.current.logicBlocks || "loading-block"}`}>
+      <div className={`content-block ${isLoading ? "loading-block" : ""}`}>
         <div className="cols-2 block-container">
-
           <AlgorithmBlock title="LOP 1" id={0} onBlockChange={setValueBlock}
-            disabled={!logicBlocks[0]}
-            config={logicBlocks[0]}
+            disabled={!logicBlocks?.[0]}
+            config={logicBlocks?.[0]}
           />
           <AlgorithmBlock title="LOP 2" id={1} onBlockChange={setValueBlock}
-            disabled={!logicBlocks[1]}
-            config={logicBlocks[1]}
+            disabled={!logicBlocks?.[1]}
+            config={logicBlocks?.[1]}
           />
         </div>
         <div className="cols-2 block-container">
           <AlgorithmBlock title="LOP 3" id={2} onBlockChange={setValueBlock}
-            disabled={!logicBlocks[2]}
-            config={logicBlocks[2]}
+            disabled={!logicBlocks?.[2]}
+            config={logicBlocks?.[2]}
           />
           <MixerBlock id="mixer-1" title="MIXER 1" onMixerChange={() => { }} />
         </div>
