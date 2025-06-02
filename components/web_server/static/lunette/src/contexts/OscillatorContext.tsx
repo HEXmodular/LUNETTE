@@ -176,9 +176,9 @@ export const OscillatorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return clientOscillators[id];
   }, [clientOscillators]);
 
-  useEffect(() => {
-    fetchOscillators();
-  }, [fetchOscillators]);
+  // useEffect(() => {
+  //   fetchOscillators();
+  // }, [fetchOscillators]);
 
   // Cleanup client oscillators when component unmounts or oscillators are removed
   useEffect(() => {
