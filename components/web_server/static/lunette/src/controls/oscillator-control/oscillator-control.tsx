@@ -27,7 +27,7 @@ const getCombinedType = (oscType: 'server' | 'client' | undefined, waveType: Wav
         return `client-${waveType.toLowerCase()}`;
     }
     // Default to 'server' if type is undefined or 'server'
-    return 'server';
+    return 'server'; 
 };
 
 // Helper to parse the combined type string from the SelectControl
@@ -49,14 +49,14 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
     config,
 }) => {
     const { updateOscillator, oscillators: contextOscillators, oscillatorTypes } = useOscillatorContext();
-
+    
     const actualOscillatorConfig = contextOscillators.find(osc => osc.oscillator_id === config.oscillator_id) || config;
     const currentOscillatorApiType = oscillatorTypes && oscillatorTypes[config.oscillator_id] ? oscillatorTypes[config.oscillator_id] : 'server';
 
     const [selectedCombinedType, setSelectedCombinedType] = useState<string>(
         getCombinedType(currentOscillatorApiType, actualOscillatorConfig.wave_type)
     );
-
+    
     const [frequency, setFrequency] = useState(actualOscillatorConfig.frequency);
     const [amplitude, setAmplitude] = useState(actualOscillatorConfig.amplitude);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -91,10 +91,10 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
     const handleTypeChange = useCallback(async (newCombinedType: string) => {
         if (isUpdating || !config) return;
         setIsUpdating(true);
-
+        
         const currentActualOscillator = contextOscillators.find(osc => osc.oscillator_id === config.oscillator_id) || config;
         const { type: newContextType, waveType: newWaveType } = parseCombinedType(newCombinedType, currentActualOscillator.wave_type);
-
+        
         // Update local state immediately for responsive UI
         setSelectedCombinedType(newCombinedType);
 
@@ -105,7 +105,7 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
             amplitude: amplitude, // Persist current amplitude
             // Do not set 'type' here, it's not part of OscillatorConfig for the API
         };
-
+        
         try {
             await updateOscillator(newApiConfig, newContextType);
         } catch (error) {
@@ -125,14 +125,14 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
 
         const currentActualOscillator = contextOscillators.find(osc => osc.oscillator_id === config.oscillator_id) || config;
         const { type: currentContextType } = parseCombinedType(selectedCombinedType, currentActualOscillator.wave_type);
-
+        
         const newApiConfig: OscillatorConfig = {
             ...currentActualOscillator,
             frequency: Math.round(newFrequency),
             amplitude: amplitude, // Ensure current amplitude is part of the update
             // wave_type remains as per currentActualOscillator.wave_type or what selectedCombinedType implies for client
         };
-
+        
         try {
             await updateOscillator(newApiConfig, currentContextType);
         } catch (error) {
@@ -143,11 +143,11 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
             setIsUpdating(false);
         }
     }, [isUpdating, config, updateOscillator, selectedCombinedType, contextOscillators, amplitude]);
-
+    
     const handleNoteChange = useCallback(async (note: number) => {
         // No need for isUpdating check here, handleFrequencyChange will do it.
         const newFrequency = midiNoteToFrequency(note);
-        await handleFrequencyChange(newFrequency);
+        await handleFrequencyChange(newFrequency); 
     }, [midiNoteToFrequency, handleFrequencyChange]);
 
     const handleAmplitudeChange = useCallback(async (newAmplitude: number) => {

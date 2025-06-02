@@ -77,7 +77,7 @@ describe('clientOscillator', () => {
       expect(mockOscillatorNode.type).toBe('sine');
       expect(mockOscillatorNode.frequency.setValueAtTime).toHaveBeenCalledWith(baseConfig.frequency, mockAudioContext.currentTime);
       expect(mockGainNode.gain.setValueAtTime).toHaveBeenCalledWith(baseConfig.amplitude / 100, mockAudioContext.currentTime);
-
+      
       expect(mockOscillatorNode.connect).toHaveBeenCalledWith(mockGainNode);
       expect(mockGainNode.connect).toHaveBeenCalledWith(mockAudioContext.destination);
       expect(mockOscillatorNode.start).toHaveBeenCalledTimes(1);
@@ -124,7 +124,7 @@ describe('clientOscillator', () => {
       expect(mockOscillatorNode.disconnect).toHaveBeenCalledTimes(1); // Still disconnects
     });
   });
-
+  
   describe('ensureOscillatorIsRunning', () => {
     it('should call resume if AudioContext is suspended', () => {
       mockAudioContext.state = 'suspended';

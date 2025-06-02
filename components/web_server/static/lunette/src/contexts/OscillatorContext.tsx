@@ -68,7 +68,24 @@ export const OscillatorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       });
       setOscillatorTypes(initialTypes);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch oscillators');
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch oscillators from server.';
+      console.warn(`${errorMsg} Using default client-side oscillators.`);
+
+      const defaultOscs: OscillatorConfig[] = [
+        { oscillator_id: 0, is_active: false, wave_type: 'SINE', frequency: 220, amplitude: 0, phase: 0, detune: 0, pwm: 0 },
+        { oscillator_id: 1, is_active: false, wave_type: 'SQUARE', frequency: 330, amplitude: 0, phase: 0, detune: 0, pwm: 0 },
+        { oscillator_id: 2, is_active: false, wave_type: 'SAWTOOTH', frequency: 440, amplitude: 0, phase: 0, detune: 0, pwm: 0 },
+        { oscillator_id: 3, is_active: false, wave_type: 'TRIANGLE', frequency: 550, amplitude: 0, phase: 0, detune: 0, pwm: 0 },
+      ];
+      setOscillators(defaultOscs);
+
+      const defaultTypes: Record<number, 'server' | 'client'> = {};
+      defaultOscs.forEach(osc => {
+        defaultTypes[osc.oscillator_id] = 'client';
+      });
+      setOscillatorTypes(defaultTypes);
+      
+      setError(`Defaults loaded: ${errorMsg}`); // Set a non-critical error message
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +101,7 @@ export const OscillatorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const audioCtx = audioContextRef.current;
       setClientOscillators(prevClientOscs => {
         const existingClientOsc = prevClientOscs[config.oscillator_id];
-
+        
         if (existingClientOsc) {
           // Update existing client oscillator
           existingClientOsc.node.frequency.setValueAtTime(config.frequency, audioCtx.currentTime);
@@ -105,15 +122,15 @@ export const OscillatorProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           // Create new client oscillator
           const oscillatorNode = audioCtx.createOscillator();
           const gainNode = audioCtx.createGain();
-
+          
           oscillatorNode.type = config.wave_type.toLowerCase() as OscillatorType;
           oscillatorNode.frequency.setValueAtTime(config.frequency, audioCtx.currentTime);
           gainNode.gain.setValueAtTime(config.amplitude / 100, audioCtx.currentTime); // Assuming amplitude is 0-100
-
+          
           oscillatorNode.connect(gainNode);
           gainNode.connect(audioCtx.destination);
           oscillatorNode.start();
-
+          
           return {
             ...prevClientOscs,
             [config.oscillator_id]: { node: oscillatorNode, gainNode },
