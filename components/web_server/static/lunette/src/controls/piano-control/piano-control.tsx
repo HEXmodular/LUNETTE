@@ -17,8 +17,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import './piano-control.css';
-import { getNoteFrequency, NOTES } from '@/utils/noteFreq';
-import { getNoteFromFrequency } from '@/utils/noteFreq';
 
 interface PianoControlProps {
   freq?: number;
@@ -26,10 +24,29 @@ interface PianoControlProps {
   showTwoOctaves?: boolean;
 }
 
-// const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const OCTAVES = [-1, 0, 1, 2, 3, 4, 5, 6];
 
+// A4 = 440Hz
+const A4_FREQUENCY = 440;
+const A4_OCTAVE = 4;
 
+
+const getNoteFrequency = (note: string, octave: number): number => {
+  const noteIndex = NOTES.indexOf(note);
+  const octaveDiff = octave - A4_OCTAVE;
+  const noteDiff = noteIndex - NOTES.indexOf('A');
+  return A4_FREQUENCY * Math.pow(2, octaveDiff + noteDiff / 12);
+};
+
+const getNoteFromFrequency = (frequency?: number): string => {
+  if (!frequency) return '';
+  const noteDiff = Math.round(12 * Math.log2(frequency / A4_FREQUENCY));
+  const octaveDiff = Math.floor(noteDiff / 12);
+  const noteIndex = (noteDiff % 12 + 12) % 12;
+  const octave = A4_OCTAVE + octaveDiff;
+  return `${NOTES[noteIndex]}${octave}`;
+};
 
 export const PianoControl: React.FC<PianoControlProps> = ({
   freq,

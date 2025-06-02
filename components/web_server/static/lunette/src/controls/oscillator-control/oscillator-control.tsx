@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import ValueControl from '@controls/value-control/value-control';
-import { SelectControl } from '@controls/select-control/select-control';
+import SelectControl from '@controls/select-control/select-control';
 import { useOscillatorContext } from '@contexts/OscillatorContext';
 import './oscillator-control.css';
 
@@ -79,6 +79,9 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
     //     return `${noteName}${octave}`;
     // }, [noteNames]);
 
+    const oscillatorTypeLabels = OSCILLATOR_TYPES.map(opt => opt.label);
+    const selectedTypeIndex = OSCILLATOR_TYPES.findIndex(opt => opt.value === selectedCombinedType);
+
     const frequencyToMidiNote = useCallback((freq: number) => {
         if (freq <= 0) return 0; // Avoid log(0) or negative
         return Math.round(12 * Math.log2(freq / 440) + 69);
@@ -88,8 +91,13 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
         return 440 * Math.pow(2, (note - 69) / 12);
     }, []);
 
-    const handleTypeChange = useCallback(async (newCombinedType: string) => {
-        if (isUpdating || !config) return;
+    // Updated to match SelectControl's onChange signature for single mode
+    const handleTypeChange = useCallback(async (controlId: string, index: number, isSelected: boolean) => {
+        if (!isSelected || isUpdating || !config) return; // Only proceed if a new item is selected
+        
+        const newCombinedType = OSCILLATOR_TYPES[index]?.value;
+        if (!newCombinedType) return;
+
         setIsUpdating(true);
         
         const currentActualOscillator = contextOscillators.find(osc => osc.oscillator_id === config.oscillator_id) || config;
@@ -203,15 +211,15 @@ const OscillatorControl: React.FC<OscillatorControlProps> = ({
                     max={100}
                     value={amplitude}
                     onChange={handleAmplitudeChange}
-                    showLabel={showLabel}
+                    showLabel={showLabel} // ValueControl uses showLabel
                 />
                 <SelectControl
-                    label="Type"
-                    value={selectedCombinedType}
-                    options={OSCILLATOR_TYPES}
-                    onChange={handleTypeChange} // This function needs to be defined
-                    showLabel={showLabel}
                     id={`${config.oscillator_id}-type`}
+                    labels={oscillatorTypeLabels}
+                    value={selectedTypeIndex >= 0 ? selectedTypeIndex : undefined} // Pass undefined if not found, though it should always be found
+                    onChange={handleTypeChange}
+                    mode="single"
+                    columns={1} // Adjust columns as needed, e.g., 1 for a dropdown-like list or 2 for 2xN grid
                 />
             </div>
         </div>

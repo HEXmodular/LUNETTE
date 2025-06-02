@@ -2,8 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import './select-control.css';
 
 interface SelectControlProps {
-    id?: string;
-    label?: string;
+    id: string;
     labels: string[];
     columns?: number;
     mode?: 'multiple' | 'single';
@@ -15,8 +14,7 @@ interface SelectControlProps {
 }
 
 export const SelectControl: React.FC<SelectControlProps> = ({
-    id = '',
-    label,
+    id,
     labels,
     columns = 4,
     mode = 'multiple',
@@ -26,83 +24,92 @@ export const SelectControl: React.FC<SelectControlProps> = ({
     disabled,
     onChange,
 }) => {
-
+    if (!labels || !Array.isArray(labels) || labels.length === 0) {
+        console.error(`SelectControl (id: ${id}): 'labels' prop is missing, not an array, or empty. Rendering null.`);
+        return null;
+    }
 
     // console.log('SelectControl id', id, 'value', value);
 
 
-    const valuesState = (valueArg?: number, valuesArray?: number[]) => {
-        if (valueArg !== undefined) {
-            // console.log('SelectControl valueArg', valueArg, Array(labels.length).fill(false).map((_, index) => index == valueArg));
-            return Array(labels.length).fill(false).map((_, index) => index == valueArg);
+    // Helper function to initialize or update the active state based on props
+    // Ensures that operations are only performed if 'labels' is valid (already checked by the guard clause)
+    const getInitialActiveState = useCallback(() => {
+        if (mode === 'single' && value !== undefined && value >= 0 && value < labels.length) {
+            const initialState = Array(labels.length).fill(false);
+            initialState[value] = true;
+            return initialState;
         }
-        if (valuesArray) {
-            return valuesArray;
+        if (mode === 'multiple' && values && Array.isArray(values)) {
+            const initialState = Array(labels.length).fill(false);
+            values.forEach(idx => {
+                if (idx >= 0 && idx < labels.length) {
+                    initialState[idx] = true;
+                }
+            });
+            return initialState;
         }
         return Array(labels.length).fill(false);
-    }
+    }, [labels, mode, value, values]);
 
-    const [isActive, setIsActive] = useState<boolean[]>(Array(labels.length).fill(false));
+    const [isActive, setIsActive] = useState<boolean[]>(getInitialActiveState());
 
     useEffect(() => {
         if (disabled) {
+            // Optionally, you might want to clear active state or handle disabled appearance
             return;
         }
-        setIsActive(valuesState(value, values));
-    }, [disabled, value, values]);
+        // Re-initialize state if relevant props change
+        setIsActive(getInitialActiveState());
+    }, [disabled, value, values, mode, labels, getInitialActiveState]);
 
     const handleToggle = useCallback((index: number) => {
-        if (disabled) {
+        if (disabled || index < 0 || index >= labels.length) {
             return;
         }
+        
+        let newActiveStateArray: boolean[];
+        let newSelectedValue: boolean;
+
         if (mode === 'single') {
-            const newState = Array(labels.length).fill(false);
-            newState[index] = true;
-            setIsActive(newState);
-            onChange?.(id, index, true);
-        } else {
-            const newState = [...isActive];
-            newState[index] = !newState[index];
-            setIsActive(newState);
-            onChange?.(id, index, newState[index], newState);
+            newActiveStateArray = Array(labels.length).fill(false);
+            newActiveStateArray[index] = true;
+            newSelectedValue = true;
+        } else { // mode === 'multiple'
+            newActiveStateArray = [...isActive];
+            newActiveStateArray[index] = !newActiveStateArray[index];
+            newSelectedValue = newActiveStateArray[index];
         }
+        
+        setIsActive(newActiveStateArray);
+        onChange?.(id, index, newSelectedValue, newActiveStateArray);
 
-
-    }, [mode, labels.length, onChange, id]);
+    }, [disabled, mode, labels, onChange, id, isActive]);
 
     // const getActiveIndices = useCallback(() => {
     //     return state.map((value, index) => value ? index : -1).filter(index => index !== -1);
     // }, [state]);
 
     return (
-        <div className="select-control-wrapper">
-            {label && (
-                <div 
-                    className="select-control-label"
+        <div 
+            className="logic-block-control"
+            style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                gap: '2px',
+                fontSize: `${fontSize}px`
+            }}
+        >
+            {labels.map((label, index) => (
+                <button
+                    key={index}
+                    className={`logic-block-btn ${isActive[index] ? 'active' : ''}`}
+                    onClick={() => handleToggle(index)}
+                    data-index={index}
                 >
                     {label}
-                </div>
-            )}
-            <div 
-                className="logic-block-control"
-                style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                    gap: '2px',
-                    fontSize: `${fontSize}px`
-                }}
-            >
-                {labels.map((label, index) => (
-                    <button
-                        key={index}
-                        className={`logic-block-btn ${isActive[index] ? 'active' : ''}`}
-                        onClick={() => handleToggle(index)}
-                        data-index={index}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
+                </button>
+            ))}
         </div>
     );
 };
