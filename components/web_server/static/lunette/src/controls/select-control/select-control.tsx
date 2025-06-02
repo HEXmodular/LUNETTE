@@ -2,7 +2,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import './select-control.css';
 
 interface SelectControlProps {
-    id: string;
+    id?: string;
+    label?: string;
     labels: string[];
     columns?: number;
     mode?: 'multiple' | 'single';
@@ -14,7 +15,8 @@ interface SelectControlProps {
 }
 
 export const SelectControl: React.FC<SelectControlProps> = ({
-    id,
+    id = '',
+    label,
     labels,
     columns = 4,
     mode = 'multiple',
@@ -73,25 +75,34 @@ export const SelectControl: React.FC<SelectControlProps> = ({
     // }, [state]);
 
     return (
-        <div 
-            className="logic-block-control"
-            style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                gap: '2px',
-                fontSize: `${fontSize}px`
-            }}
-        >
-            {labels.map((label, index) => (
-                <button
-                    key={index}
-                    className={`logic-block-btn ${isActive[index] ? 'active' : ''}`}
-                    onClick={() => handleToggle(index)}
-                    data-index={index}
+        <div className="select-control-wrapper">
+            {label && (
+                <div 
+                    className="select-control-label"
                 >
                     {label}
-                </button>
-            ))}
+                </div>
+            )}
+            <div 
+                className="logic-block-control"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                    gap: '2px',
+                    fontSize: `${fontSize}px`
+                }}
+            >
+                {labels.map((label, index) => (
+                    <button
+                        key={index}
+                        className={`logic-block-btn ${isActive[index] ? 'active' : ''}`}
+                        onClick={() => handleToggle(index)}
+                        data-index={index}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 };

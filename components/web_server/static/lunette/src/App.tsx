@@ -9,6 +9,7 @@ import MainScreen from '@screens/main-screen'
 import EffectsScreen from '@screens/effects-screen'
 import { KeyboardScreen } from '@screens/keyboard-screen'
 import { SequencerScreen } from '@screens/sequencer-screen'
+import SequencerMagenta from '@/screens/sequencer-magenta/sequencer-magenta'
 
 import { OscillatorProvider } from '@contexts/OscillatorContext'
 import { TouchProvider, useTouch } from '@contexts/TouchContext'
@@ -55,7 +56,8 @@ const AppContent: React.FC = () => {
             setAudioEngineStarted(true);
           }}>START AUDIO ENGINE</button>}
         </div>
-        <SwipeScreensControl initialScreen={1} onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
+        <SwipeScreensControl initialScreen={0} onScreenChange={(index) => console.log(`Switched to screen ${index}`)}>
+          <SequencerMagenta />
           <KeyboardScreen />
           <MainScreen />
           <SequencerScreen />
