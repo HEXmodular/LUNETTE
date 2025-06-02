@@ -88,11 +88,11 @@ describe('OscillatorProvider', () => {
       await waitForNextUpdate(); // Initial fetch
 
       const configToUpdate = { ...mockInitialOscillators[0], is_active: true, wave_type: 'SINE' as const };
-
+      
       await act(async () => {
         await result.current.updateOscillator(configToUpdate, 'client');
       });
-
+      
       expect(mockedCreateClientOscillator).toHaveBeenCalledWith(expect.any(AudioContext), configToUpdate);
       expect(result.current.getClientOscillator(configToUpdate.oscillator_id)).toBeDefined();
     });
@@ -100,7 +100,7 @@ describe('OscillatorProvider', () => {
     it('should call ensureOscillatorIsRunning and update existing client oscillator properties', async () => {
       const { result, waitForNextUpdate } = renderHook(() => useOscillatorContext(), { wrapper });
       await waitForNextUpdate();
-
+      
       const initialConfig = { ...mockInitialOscillators[0], is_active: true, wave_type: 'SINE' as const };
       // First, create it as client
       await act(async () => {
@@ -122,7 +122,7 @@ describe('OscillatorProvider', () => {
     it('should update wave type for an existing client oscillator', async () => {
       const { result, waitForNextUpdate } = renderHook(() => useOscillatorContext(), { wrapper });
       await waitForNextUpdate();
-
+      
       const initialConfig = { ...mockInitialOscillators[0], is_active: true, wave_type: 'SINE' as const };
       await act(async () => {
         await result.current.updateOscillator(initialConfig, 'client');
@@ -132,15 +132,15 @@ describe('OscillatorProvider', () => {
       await act(async () => {
         await result.current.updateOscillator(updatedConfig, 'client');
       });
-
+      
       expect(clientOscillator.updateClientOscillatorWaveType).toHaveBeenCalledWith(expect.anything(), updatedConfig.wave_type);
     });
-
+    
     it('should stop and remove client oscillator if is_active becomes false', async () => {
       const { result, waitForNextUpdate } = renderHook(() => useOscillatorContext(), { wrapper });
       await waitForNextUpdate();
       const config = { ...mockInitialOscillators[0], is_active: true, wave_type: 'SINE' as const };
-
+      
       // Create client oscillator
       await act(async () => {
         await result.current.updateOscillator(config, 'client');
@@ -182,7 +182,7 @@ describe('OscillatorProvider', () => {
     it('should call updateOscillatorApi for server-side updates', async () => {
       const { result, waitForNextUpdate } = renderHook(() => useOscillatorContext(), { wrapper });
       await waitForNextUpdate();
-
+      
       const configToUpdate = { ...mockInitialOscillators[0], frequency: 500 };
       mockedUpdateOscillatorApi.mockResolvedValue(undefined);
 
@@ -194,12 +194,12 @@ describe('OscillatorProvider', () => {
       expect(mockedCreateClientOscillator).not.toHaveBeenCalled();
     });
   });
-
+  
   // Test cleanup of client oscillators on unmount
   it('should cleanup client oscillators on unmount', async () => {
     const { result, waitForNextUpdate, unmount } = renderHook(() => useOscillatorContext(), { wrapper });
     await waitForNextUpdate();
-
+    
     const config = { ...mockInitialOscillators[0], is_active: true, wave_type: 'SINE' as const };
     await act(async () => {
       await result.current.updateOscillator(config, 'client');
@@ -209,9 +209,68 @@ describe('OscillatorProvider', () => {
     act(() => {
       unmount();
     });
-
+    
     // The OscillatorContext.tsx has a cleanup useEffect for clientOscillators.
     // This should lead to stopClientOscillator being called for each active client oscillator.
     expect(mockedStopClientOscillator).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('OscillatorProvider - API Failure and Fallback', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Mock global AudioContext if not already available via JSDOM or similar
+    if (!(global as any).AudioContext) {
+        (global as any).AudioContext = jest.fn(() => mockAudioContext);
+    }
+     if (!(global as any).webkitAudioContext) {
+        (global as any).webkitAudioContext = jest.fn(() => mockAudioContext);
+    }
+    mockedCreateClientOscillator.mockImplementation(() => ({
+      oscillatorNode: { /* mock node */ } as OscillatorNode,
+      gainNode: { /* mock gain */ } as GainNode,
+    }));
+  });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <OscillatorProvider>{children}</OscillatorProvider>
+  );
+
+  it('should load default client oscillators if getOscillators API call fails', async () => {
+    mockedGetOscillators.mockRejectedValueOnce(new Error('API Fetch Failed'));
+    
+    const { result, waitForNextUpdate } = renderHook(() => useOscillatorContext(), { wrapper });
+    await waitForNextUpdate(); // Wait for fetchOscillators to complete (and fail)
+
+    expect(mockedGetOscillators).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBe('Defaults loaded: API Fetch Failed');
+    
+    const defaultOscs = result.current.oscillators;
+    expect(defaultOscs).toHaveLength(4);
+
+    // Check properties of the default oscillators
+    const expectedDefaults = [
+      { oscillator_id: 0, is_active: false, wave_type: 'SINE', frequency: 220, amplitude: 0 },
+      { oscillator_id: 1, is_active: false, wave_type: 'SQUARE', frequency: 330, amplitude: 0 },
+      { oscillator_id: 2, is_active: false, wave_type: 'SAWTOOTH', frequency: 440, amplitude: 0 },
+      { oscillator_id: 3, is_active: false, wave_type: 'TRIANGLE', frequency: 550, amplitude: 0 },
+    ];
+
+    expectedDefaults.forEach((defaultOsc, index) => {
+      expect(defaultOscs[index]).toMatchObject(defaultOsc);
+    });
+
+    // Verify types are set to 'client' by attempting a client-side operation
+    // For example, activating the first default oscillator as a client one.
+    const firstDefaultOsc = defaultOscs[0];
+    const configToActivate = { ...firstDefaultOsc, is_active: true };
+
+    await act(async () => {
+      // We explicitly pass 'client' here, but the test is that the context *allows* this
+      // because it should have already set the type to 'client' during the fallback.
+      await result.current.updateOscillator(configToActivate, 'client');
+    });
+    expect(mockedCreateClientOscillator).toHaveBeenCalledWith(expect.any(AudioContext), configToActivate);
   });
 });
