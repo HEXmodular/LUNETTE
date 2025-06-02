@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import ValueControl from '@controls/value-control/value-control';
-import SelectControl from '@controls/select-control/select-control';
+import { SelectControl } from '@controls/select-control/select-control';
 import { useOscillatorContext } from '@contexts/OscillatorContext';
 import './oscillator-control.css';
 
