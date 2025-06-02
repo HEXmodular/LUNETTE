@@ -179,28 +179,34 @@ const SequencerMagenta: React.FC = () => {
         }
 
         // Initialize Player
-        (async () => {
-            playerRef.current = await new Player();
-            setIsPlayerReady(true);
-        })();
+        const initializePlayer = async () => {
+            if (!playerRef.current) { // Check if player already initialized
+                console.log("Initializing player..."); // For debugging
+                const localPlayer = new Player();
+                await localPlayer.initialize();
+                playerRef.current = localPlayer;
+                setIsPlayerReady(true);
+                console.log("Player is ready."); // For debugging
+            }
+        };
 
-
-        // // Initialize player methods
-        // const initPlayer = async () => {
-        //     try {
-        //         await player.loadSamples();
-        //         console.log('Player initialized');
-        //         setIsPlayerReady(true);
-        //     } catch (err: unknown) {
-        //         console.error('Failed to initialize player:', err);
-        //     }
-        // };
-
-        // initPlayer();
+        if (mm) { // Ensure mm is available before trying to use it for Genie or Player
+            // Initialize PianoGenie
+            if (!genieRef.current) {
+                const genie = new mm.PianoGenie(CONSTANTS.GENIE_CHECKPOINT);
+                genieRef.current = genie;
+                console.log('🧞‍♀️ initializing genie', genie);
+                genie.initialize().then(() => {
+                    console.log('🧞‍♀️ genie ready!');
+                });
+            }
+            // Initialize Player
+            initializePlayer();
+        }
 
         return () => {
             // if (playerRef.current) {
-            //     playerRef.current.stopAll();
+            //     playerRef.current.stopAll(); // Assuming player has a stopAll or similar method
             // }
         };
     }, [mm]);
